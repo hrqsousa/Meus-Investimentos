@@ -1467,7 +1467,20 @@
                         }
                     } else if (docName === 'rebalance_goals') {
                         if (data.goals) {
-                            window.rebalanceGoals = data.goals;
+                            // Deep Merge (Preserve Defaults for new categories like Aposentadoria)
+                            const saved = data.goals;
+                            Object.keys(saved).forEach(cat => {
+                                if (window.rebalanceGoals[cat]) {
+                                    // Update Target
+                                    if (saved[cat].target !== undefined) window.rebalanceGoals[cat].target = saved[cat].target;
+                                    // Update Subs
+                                    if (saved[cat].subs) {
+                                        Object.keys(saved[cat].subs).forEach(sub => {
+                                            window.rebalanceGoals[cat].subs[sub] = saved[cat].subs[sub];
+                                        });
+                                    }
+                                }
+                            });
                             if (currentContext === 'rebalanceamento') renderRebalanceamento();
                         }
                     }
@@ -1648,12 +1661,13 @@
     <script>
         let currentContext = 'dashboard';
         let currentUsdRate = 5.00;
-        window.annualGoal = 0; // Transformado em variável global window para acesso no módulo
+        window.annualGoal = 0; // Transformado em variável global
+        // Initial State for Goals (Default)
         window.rebalanceGoals = {
-            'reserva': { target: 20, subs: { 'Reserva': 10, 'Tesouro Selic': 10 } },
-            'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 10, 'Renda Fixa IPCA': 10, 'Tesouro IPCA': 10 } },
-            'renda-variavel': { target: 40, subs: { 'Ações': 15, 'FIIs': 15, 'Exterior': 5, 'Cripto': 5 } },
-            'aposentadoria': { target: 10, subs: { 'Tesouro Renda+': 10 } }
+            'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
+            'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 30, 'Renda Fixa IPCA': 30, 'Tesouro IPCA': 40 } },
+            'renda-variavel': { target: 30, subs: { 'Ações': 50, 'FIIs': 25, 'Exterior': 20, 'Cripto': 5 } },
+            'aposentadoria': { target: 20, subs: { 'Tesouro Renda+': 100 } }
         };
         window.rvAssetGoals = { 'PETR4': 20, 'VALE3': 20, 'HGLG11': 30, 'VT': 100, 'BTC': 100 };
         window.currentRvFilter = 'all';
