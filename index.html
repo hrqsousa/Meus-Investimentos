@@ -208,13 +208,19 @@
             </button>
 
             <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <div
-                    class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shadow-md">
-                    HS</div>
-                <div class="flex-1 overflow-hidden">
-                    <p class="text-sm font-bold text-slate-700 truncate">Henrique</p>
-                    <p class="text-xs text-slate-500 truncate">hrqsousa@outlook.com</p>
+                <div id="sidebar-user-avatar"
+                    class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shadow-md overflow-hidden">
+                    <i class="fa-solid fa-user"></i>
                 </div>
+                <div class="flex-1 overflow-hidden">
+                    <p id="sidebar-user-name" class="text-sm font-bold text-slate-700 truncate">Visitante</p>
+                    <p id="sidebar-user-email" class="text-xs text-slate-500 truncate">Sem email</p>
+                </div>
+                <button onclick="window.openLogoutModal()"
+                    class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50"
+                    title="Sair">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
             </div>
             <p id="app-version" onclick="handleVersionClick()"
                 class="text-[10px] text-slate-300 text-center mt-3 font-medium cursor-pointer select-none transition-colors hover:text-primary">
@@ -1365,10 +1371,25 @@
                 if (loginOverlay) loginOverlay.classList.add('opacity-0', 'pointer-events-none');
 
                 // Update Header Name
-                const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
                 if (headerName) {
-                    headerName.textContent = user.displayName || user.email || "Usuário (Sem Nome)";
+                    headerName.textContent = user.displayName || user.email || "Usuário";
                     headerName.classList.add('text-indigo-600');
+                }
+
+                // Sidebar Update
+                const sbName = document.getElementById('sidebar-user-name');
+                const sbEmail = document.getElementById('sidebar-user-email');
+                const sbAvatar = document.getElementById('sidebar-user-avatar');
+
+                if (sbName) sbName.textContent = (user.displayName || "Usuário").split(' ')[0];
+                if (sbEmail) sbEmail.textContent = user.email || "Sem email";
+                if (sbAvatar) {
+                    if (user.photoURL) {
+                        sbAvatar.innerHTML = `<img src="${user.photoURL}" class="w-full h-full object-cover">`;
+                    } else {
+                        const initial = (user.displayName || user.email || "U").charAt(0).toUpperCase();
+                        sbAvatar.innerHTML = initial;
+                    }
                 }
 
                 setupRealtimeListeners(user.uid);
@@ -1378,6 +1399,14 @@
 
                 const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
                 if (headerName) headerName.textContent = "Visitante";
+
+                // Sidebar Update (Reset)
+                const sbName = document.getElementById('sidebar-user-name');
+                const sbEmail = document.getElementById('sidebar-user-email');
+                const sbAvatar = document.getElementById('sidebar-user-avatar');
+                if (sbName) sbName.textContent = "Visitante";
+                if (sbEmail) sbEmail.textContent = "teste@local.com";
+                if (sbAvatar) sbAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
 
                 // Clear Data / Listeners
                 unsubscribeListeners.forEach(unsub => unsub());
@@ -3031,14 +3060,10 @@
             });
 
             container.innerHTML = `
-                <div class="flex justify-end mb-4 gap-2">
-                     <button onclick="resetRebalanceDefaults()" 
-                        class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+                <div class="flex justify-end mb-4">
+                     <button onclick="window.openResetModal()" 
+                        class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
                         <i class="fa-solid fa-rotate-left"></i> Redefinir Padrões
-                     </button>
-                     <button onclick="window.firebaseSaveRebalanceGoals(window.rebalanceGoals); showSuccessMessage('Metas salvas com sucesso!');" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> Salvar Definições
                      </button>
                 </div>
             `;
@@ -3081,7 +3106,7 @@
 
                 // ADDED: Unique IDs for Inputs & oninput for Local Update
                 const item = document.createElement('div'); item.className = "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm";
-                item.innerHTML = `<div class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" onclick="document.getElementById('sub-${cat.id}').classList.toggle('hidden')"><div class="flex items-center gap-4 flex-1"><div class="w-10 h-10 rounded-lg ${cat.bg} ${cat.color} flex items-center justify-center"><i class="fa-solid ${cat.icon}"></i></div><div><h4 class="font-bold text-slate-800 dark:text-slate-100">${cat.name}</h4><div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><span>Atual: ${currentPerc.toFixed(1)}%</span></div></div></div><div class="flex items-center gap-6"><div class="text-right flex flex-col items-end"><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Meta</span><div class="flex items-center gap-1"><input type="number" id="goal-${cat.id}" value="${targetPerc}" oninput="updateGoalLocal('${cat.id}', this.value)" onchange="updateGoal('${cat.id}', this.value)" onclick="event.stopPropagation()" class="w-14 text-right border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200">%</div></div><div class="w-32 hidden md:block"><div class="flex justify-between text-[10px] mb-1"><span>Aporte Sugerido</span><span class="${difference > 0 ? 'text-blue-600' : 'text-emerald-600'} font-bold">${difference > 0 ? formatCurrency(difference) : '0,00'}</span></div><div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${difference > 0 ? 'bg-blue-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, (currentVal / targetVal) * 100)}%"></div></div></div><i class="fa-solid fa-chevron-down text-slate-300 ml-2"></i></div></div><div id="sub-${cat.id}" class="${isHiddenClass} bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-4 space-y-1">${subKeys.map(subKey => { const subCurrent = subTotals[cat.id][subKey] || 0; const subTargetPerc = window.rebalanceGoals[cat.id].subs[subKey]; const subTargetVal = totalWithCaixa * (subTargetPerc / 100); const subDiff = subTargetVal - subCurrent; return `<div class="flex items-center justify-between text-sm py-2 px-2 rounded hover:bg-slate-100/80 dark:hover:bg-slate-700/80 transition-colors"><div class="flex items-center gap-3 flex-1"><div class="w-1.5 h-1.5 rounded-full ${subDiff > 0 ? 'bg-blue-400' : 'bg-emerald-400'}"></div><span class="text-slate-600 dark:text-slate-400 font-medium">${subKey}</span></div><div class="flex items-center gap-6"><span class="text-slate-400 text-xs w-20 text-right">${formatCurrency(subCurrent)}</span><div class="flex items-center gap-1 w-16 justify-end"><input type="number" id="subgoal-${cat.id}-${subKey.replace(/\s+/g, '_')}" value="${subTargetPerc}" class="w-10 text-right bg-transparent border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none text-xs font-bold text-slate-600 dark:text-slate-400" oninput="updateSubGoalLocal('${cat.id}', '${subKey}', this.value)" onchange="updateSubGoal('${cat.id}', '${subKey}', this.value)">%</div><div class="w-24 text-right"><span class="text-xs font-bold ${subDiff > 0 ? 'text-blue-600' : 'text-slate-400'}">${subDiff > 0 ? '+' + formatCurrency(subDiff) : '-'}</span></div></div></div>`; }).join('')}</div>`;
+                item.innerHTML = `<div class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" onclick="document.getElementById('sub-${cat.id}').classList.toggle('hidden')"><div class="flex items-center gap-4 flex-1"><div class="w-10 h-10 rounded-lg ${cat.bg} ${cat.color} flex items-center justify-center"><i class="fa-solid ${cat.icon}"></i></div><div><h4 class="font-bold text-slate-800 dark:text-slate-100">${cat.name}</h4><div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><span>Atual: ${currentPerc.toFixed(1)}%</span></div></div></div><div class="flex items-center gap-6"><div class="text-right flex flex-col items-end"><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Meta</span><div class="flex items-center gap-1"><input type="number" id="goal-${cat.id}" value="${targetPerc}" oninput="updateGoalLocal('${cat.id}', this.value)" onchange="updateGoal('${cat.id}', this.value)" onclick="event.stopPropagation()" class="w-14 text-right border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200">%</div></div><div class="w-32 hidden md:block"><div class="flex justify-between text-[10px] mb-1"><span>Aporte Sugerido</span><span class="${difference > 0 ? 'text-blue-600' : 'text-emerald-600'} font-bold">${difference > 0 ? formatCurrency(difference) : '0,00'}</span></div><div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${difference > 0 ? 'bg-blue-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, (currentVal / targetVal) * 100)}%"></div></div></div><i class="fa-solid fa-chevron-down text-slate-300 ml-2"></i></div></div><div id="sub-${cat.id}" class="${isHiddenClass} bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-4 space-y-1">${subKeys.map(subKey => { const subCurrent = subTotals[cat.id][subKey] || 0; const subTargetPerc = window.rebalanceGoals[cat.id].subs[subKey]; const subTargetVal = totalWithCaixa * (subTargetPerc / 0); const subDiff = subTargetVal - subCurrent; return `<div class="flex items-center justify-between text-sm py-2 px-2 rounded hover:bg-slate-100/80 dark:hover:bg-slate-700/80 transition-colors"><div class="flex items-center gap-3 flex-1"><div class="w-1.5 h-1.5 rounded-full ${subDiff > 0 ? 'bg-blue-400' : 'bg-emerald-400'}"></div><span class="text-slate-600 dark:text-slate-400 font-medium">${subKey}</span></div><div class="flex items-center gap-6"><span class="text-slate-400 text-xs w-20 text-right">${formatCurrency(subCurrent)}</span><div class="flex items-center gap-1 w-16 justify-end"><input type="number" id="subgoal-${cat.id}-${subKey.replace(/\s+/g, '_')}" value="${subTargetPerc}" class="w-10 text-right bg-transparent border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none text-xs font-bold text-slate-600 dark:text-slate-400" oninput="updateSubGoalLocal('${cat.id}', '${subKey}', this.value)" onchange="updateSubGoal('${cat.id}', '${subKey}', this.value)">%</div><div class="w-24 text-right"><span class="text-xs font-bold ${subDiff > 0 ? 'text-blue-600' : 'text-slate-400'}">${subDiff > 0 ? '+' + formatCurrency(subDiff) : '-'}</span></div></div></div>`; }).join('')}</div>`;
                 container.appendChild(item);
             });
 
@@ -3108,6 +3133,129 @@
                     }
                 }
             }
+        }
+
+        window.updateGoal = (catId, val) => {
+            if (window.firebaseSaveRebalanceGoals) window.firebaseSaveRebalanceGoals(window.rebalanceGoals);
+        };
+
+        window.updateSubGoal = (catId, subKey, val) => {
+            if (window.firebaseSaveRebalanceGoals) window.firebaseSaveRebalanceGoals(window.rebalanceGoals);
+        };
+
+        // Immediate Local Updates (oninput) - APENAS ATUALIZA O MODELO, NÃO RENDERIZA
+        // Isso evita que a digitação seja interrompida ou formatada incorretamente (ex: "5." virando "5")
+        window.updateGoalLocal = (catId, val) => {
+            const numVal = parseFloat(val);
+            if (!isNaN(numVal)) window.rebalanceGoals[catId].target = numVal;
+        };
+
+        window.updateSubGoalLocal = (catId, subKey, val) => {
+            if (!window.rebalanceGoals[catId]) return;
+            if (!window.rebalanceGoals[catId].subs) window.rebalanceGoals[catId].subs = {};
+
+            const numVal = parseFloat(val);
+            if (!isNaN(numVal)) window.rebalanceGoals[catId].subs[subKey] = numVal;
+        };
+
+        // --- Modal Logic ---
+        window.openResetModal = () => {
+            const modal = document.getElementById('reset-confirmation-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('reset-modal-content').classList.remove('opacity-0', 'scale-95');
+                document.getElementById('reset-modal-content').classList.add('scale-100');
+            }, 10);
+        };
+
+        window.closeResetModal = () => {
+            const modal = document.getElementById('reset-confirmation-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('reset-modal-content').classList.remove('scale-100');
+            document.getElementById('reset-modal-content').classList.add('opacity-0', 'scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        window.confirmReset = () => {
+            window.rebalanceGoals = {
+                'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
+                'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 30, 'Renda Fixa IPCA': 30, 'Tesouro IPCA': 40 } },
+                'renda-variavel': { target: 30, subs: { 'Ações': 50, 'FIIs': 25, 'Exterior': 20, 'Cripto': 5 } },
+                'aposentadoria': { target: 20, subs: { 'Tesouro Renda+': 100 } }
+            };
+
+            window.firebaseSaveRebalanceGoals(window.rebalanceGoals);
+            renderRebalanceamento();
+            closeResetModal();
+            showSuccessMessage("Padrões restaurados!");
+        };
+
+        const categories = [
+            { id: 'reserva', name: 'Reserva de Emergência', icon: 'fa-shield-heart', color: 'text-emerald-600', bg: 'bg-emerald-100' },
+            { id: 'renda-fixa', name: 'Renda Fixa', icon: 'fa-building-columns', color: 'text-blue-600', bg: 'bg-blue-100' },
+            { id: 'renda-variavel', name: 'Renda Variável', icon: 'fa-chart-line', color: 'text-purple-600', bg: 'bg-purple-100' },
+            { id: 'aposentadoria', name: 'Aposentadoria', icon: 'fa-umbrella-beach', color: 'text-orange-600', bg: 'bg-orange-100' }
+        ];
+
+        const violations = [];
+
+        categories.forEach(cat => {
+            const currentVal = totals[cat.id]; const targetPerc = window.rebalanceGoals[cat.id].target; const targetVal = totalWithCaixa * (targetPerc / 100); const difference = targetVal - currentVal; const currentPerc = totalWithCaixa > 0 ? (currentVal / totalWithCaixa * 100) : 0;
+
+            // ORDEM FIXA DAS SUBCATEGORIAS
+            let subKeys = [];
+            if (cat.id === 'reserva') subKeys = ['Reserva', 'Tesouro Selic'];
+            else if (cat.id === 'renda-fixa') subKeys = ['Renda Fixa CDI', 'Renda Fixa IPCA', 'Tesouro IPCA'];
+            else if (cat.id === 'renda-variavel') subKeys = ['Ações', 'FIIs', 'Exterior', 'Cripto'];
+            else if (cat.id === 'aposentadoria') subKeys = ['Tesouro Renda+'];
+            else subKeys = Object.keys(window.rebalanceGoals[cat.id].subs); // Fallback
+
+            // Filter keys that actually exist in goals (in case one is missing for some reason)
+            subKeys = subKeys.filter(k => window.rebalanceGoals[cat.id].subs[k] !== undefined);
+
+            // Check if there are extra keys not in fixed list and append them (just in case)
+            const allKeys = Object.keys(window.rebalanceGoals[cat.id].subs);
+            allKeys.forEach(k => { if (!subKeys.includes(k)) subKeys.push(k); });
+
+            const subPercSum = subKeys.reduce((acc, k) => acc + window.rebalanceGoals[cat.id].subs[k], 0); const isSumCorrect = Math.abs(subPercSum - targetPerc) < 0.1;
+
+            // Validação: Subcategorias não podem exceder a categoria principal
+            if (subPercSum > targetPerc + 0.001) {
+                violations.push(`<b>${cat.name}</b>: Soma das subs (${subPercSum.toFixed(1)}%) excede a meta da categoria (${targetPerc.toFixed(1)}%)`);
+            }
+
+            const isHiddenClass = expandedState[cat.id] ? '' : 'hidden'; // Usa o estado preservado
+
+            // ADDED: Unique IDs for Inputs & oninput for Local Update
+            const item = document.createElement('div'); item.className = "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm";
+            item.innerHTML = `<div class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" onclick="document.getElementById('sub-${cat.id}').classList.toggle('hidden')"><div class="flex items-center gap-4 flex-1"><div class="w-10 h-10 rounded-lg ${cat.bg} ${cat.color} flex items-center justify-center"><i class="fa-solid ${cat.icon}"></i></div><div><h4 class="font-bold text-slate-800 dark:text-slate-100">${cat.name}</h4><div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><span>Atual: ${currentPerc.toFixed(1)}%</span></div></div></div><div class="flex items-center gap-6"><div class="text-right flex flex-col items-end"><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Meta</span><div class="flex items-center gap-1"><input type="number" id="goal-${cat.id}" value="${targetPerc}" oninput="updateGoalLocal('${cat.id}', this.value)" onchange="updateGoal('${cat.id}', this.value)" onclick="event.stopPropagation()" class="w-14 text-right border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200">%</div></div><div class="w-32 hidden md:block"><div class="flex justify-between text-[10px] mb-1"><span>Aporte Sugerido</span><span class="${difference > 0 ? 'text-blue-600' : 'text-emerald-600'} font-bold">${difference > 0 ? formatCurrency(difference) : '0,00'}</span></div><div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${difference > 0 ? 'bg-blue-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, (currentVal / targetVal) * 100)}%"></div></div></div><i class="fa-solid fa-chevron-down text-slate-300 ml-2"></i></div></div><div id="sub-${cat.id}" class="${isHiddenClass} bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-4 space-y-1">${subKeys.map(subKey => { const subCurrent = subTotals[cat.id][subKey] || 0; const subTargetPerc = window.rebalanceGoals[cat.id].subs[subKey]; const subTargetVal = totalWithCaixa * (subTargetPerc / 100); const subDiff = subTargetVal - subCurrent; return `<div class="flex items-center justify-between text-sm py-2 px-2 rounded hover:bg-slate-100/80 dark:hover:bg-slate-700/80 transition-colors"><div class="flex items-center gap-3 flex-1"><div class="w-1.5 h-1.5 rounded-full ${subDiff > 0 ? 'bg-blue-400' : 'bg-emerald-400'}"></div><span class="text-slate-600 dark:text-slate-400 font-medium">${subKey}</span></div><div class="flex items-center gap-6"><span class="text-slate-400 text-xs w-20 text-right">${formatCurrency(subCurrent)}</span><div class="flex items-center gap-1 w-16 justify-end"><input type="number" id="subgoal-${cat.id}-${subKey.replace(/\s+/g, '_')}" value="${subTargetPerc}" class="w-10 text-right bg-transparent border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none text-xs font-bold text-slate-600 dark:text-slate-400" oninput="updateSubGoalLocal('${cat.id}', '${subKey}', this.value)" onchange="updateSubGoal('${cat.id}', '${subKey}', this.value)">%</div><div class="w-24 text-right"><span class="text-xs font-bold ${subDiff > 0 ? 'text-blue-600' : 'text-slate-400'}">${subDiff > 0 ? '+' + formatCurrency(subDiff) : '-'}</span></div></div></div>`; }).join('')}</div>`;
+            container.appendChild(item);
+        });
+
+        if (violations.length > 0) {
+            const div = document.createElement('div');
+            div.className = "bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r shadow-sm flex items-start gap-3";
+            div.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i><div><p class="font-bold text-red-700 text-sm">Atenção: A soma das subcategorias excede a meta principal:</p><ul class="text-sm text-red-600 list-disc list-inside">${violations.map(v => `<li>${v}</li>`).join('')}</ul></div>`;
+            container.prepend(div);
+        }
+
+        // Restauração de Foco e Valor
+        if (activeId) {
+            const el = document.getElementById(activeId);
+            if (el) {
+                // Se o elemento ativo é um dos inputs de meta, restaura o valor "cru" que o usuário estava digitando
+                // Isso impede que um update externo sobrescreva "5." com "5", ou mova o cursor
+                if (activeValue !== null) {
+                    el.value = activeValue;
+                }
+
+                el.focus();
+                if (selectionStart !== null && selectionEnd !== null) {
+                    try { el.setSelectionRange(selectionStart, selectionEnd); } catch (e) { }
+                }
+            }
+        }
         }
 
         window.updateGoal = (catId, val) => {
@@ -5386,6 +5534,63 @@
         });
     </script>
 
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-confirmation-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[300] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm transform scale-95 opacity-0 transition-all"
+            id="logout-modal-content">
+            <div class="text-center">
+                <div
+                    class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-right-from-bracket text-red-500 text-xl"></i>
+                </div>
+                <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 mb-2">Sair da Conta?</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                    Você precisará fazer login novamente para acessar seus dados.
+                </p>
+                <div class="flex gap-3">
+                    <button onclick="window.closeLogoutModal()"
+                        class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-colors">
+                        Cancelar
+                    </button>
+                    <button onclick="window.confirmLogout()"
+                        class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30">
+                        Sim, Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="reset-confirmation-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[80] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm transform scale-95 opacity-0 transition-all"
+            id="reset-modal-content">
+            <div class="text-center">
+                <div
+                    class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
+                </div>
+                <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 mb-2">Redefinir Padrões?</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-sm mb-6">
+                    Isso apagará todas as suas metas personalizadas e restaurará a estrutura original. Essa ação não
+                    pode ser desfeita.
+                </p>
+                <div class="flex gap-3">
+                    <button onclick="window.closeResetModal()"
+                        class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-colors">
+                        Cancelar
+                    </button>
+                    <button onclick="window.confirmReset()"
+                        class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30">
+                        Sim, Redefinir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Changelog Modal -->
     <div id="changelog-modal"
         class="fixed inset-0 bg-slate-900/60 z-[80] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
@@ -5575,13 +5780,30 @@
         if (target) target.classList.remove('hidden');
 
         document.querySelectorAll('.sidebar-link').forEach(el => {
-            el.classList.remove('active', 'bg-slate-50', 'text-primary');
+            // Reset to Inactive State
+            el.classList.remove('active', 'bg-primary', 'text-white');
             el.classList.add('text-slate-500');
+
+            // Fix Icon Color
+            const icon = el.querySelector('i');
+            if (icon) {
+                icon.classList.remove('text-white', 'text-white/90');
+                icon.classList.add('text-slate-400');
+            }
         });
+
         const activeLink = document.getElementById('nav-' + viewId);
         if (activeLink) {
-            activeLink.classList.add('active', 'bg-slate-50', 'text-primary');
+            // Set Active State (Blue Background)
             activeLink.classList.remove('text-slate-500');
+            activeLink.classList.add('active', 'bg-primary', 'text-white');
+
+            // Fix Icon Color to White
+            const icon = activeLink.querySelector('i');
+            if (icon) {
+                icon.classList.remove('text-slate-400');
+                icon.classList.add('text-white');
+            }
         }
 
         // Update Context Global
@@ -5641,6 +5863,30 @@
             modal.classList.add('opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
+    };
+
+    // Logout Modal Logic
+    window.openLogoutModal = () => {
+        const modal = document.getElementById('logout-confirmation-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            document.getElementById('logout-modal-content').classList.remove('opacity-0', 'scale-95');
+            document.getElementById('logout-modal-content').classList.add('scale-100');
+        }, 10);
+    };
+
+    window.closeLogoutModal = () => {
+        const modal = document.getElementById('logout-confirmation-modal');
+        modal.classList.add('opacity-0');
+        document.getElementById('logout-modal-content').classList.remove('scale-100');
+        document.getElementById('logout-modal-content').classList.add('opacity-0', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.confirmLogout = () => {
+        closeLogoutModal();
+        window.handleLogout();
     };
 
     window.toggleValidationSetting = (checked) => {
