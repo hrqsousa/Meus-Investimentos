@@ -3031,7 +3031,11 @@
             });
 
             container.innerHTML = `
-                <div class="flex justify-end mb-4">
+                <div class="flex justify-end mb-4 gap-2">
+                     <button onclick="resetRebalanceDefaults()" 
+                        class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i> Redefinir Padrões
+                     </button>
                      <button onclick="window.firebaseSaveRebalanceGoals(window.rebalanceGoals); showSuccessMessage('Metas salvas com sucesso!');" 
                         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
                         <i class="fa-solid fa-floppy-disk"></i> Salvar Definições
@@ -3127,6 +3131,21 @@
 
             const numVal = parseFloat(val);
             if (!isNaN(numVal)) window.rebalanceGoals[catId].subs[subKey] = numVal;
+        };
+
+        window.resetRebalanceDefaults = () => {
+            if (!confirm("Isso apagará suas metas personalizadas e restaurará o padrão original (com Aposentadoria, Cripto, etc.). Deseja continuar?")) return;
+
+            window.rebalanceGoals = {
+                'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
+                'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 30, 'Renda Fixa IPCA': 30, 'Tesouro IPCA': 40 } },
+                'renda-variavel': { target: 30, subs: { 'Ações': 50, 'FIIs': 25, 'Exterior': 20, 'Cripto': 5 } },
+                'aposentadoria': { target: 20, subs: { 'Tesouro Renda+': 100 } }
+            };
+
+            window.firebaseSaveRebalanceGoals(window.rebalanceGoals);
+            renderRebalanceamento();
+            showSuccessMessage("Padrões restaurados!");
         };
 
         window.currentHistFilter = 'all';
