@@ -1371,6 +1371,7 @@
                 if (loginOverlay) loginOverlay.classList.add('opacity-0', 'pointer-events-none');
 
                 // Update Header Name
+                const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
                 if (headerName) {
                     headerName.textContent = user.displayName || user.email || "Usuário";
                     headerName.classList.add('text-indigo-600');
