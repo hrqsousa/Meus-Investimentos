@@ -1292,7 +1292,7 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, setDoc, getDoc, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // --- ÁREA DE CONFIGURAÇÃO DO FIREBASE (Edite aqui para Deploy) ---
@@ -1343,14 +1343,20 @@
             }
         };
 
+        window.handleAnonymousLogin = async () => {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Anon Login Error:", error);
+                alert("Erro no login anônimo: " + error.message);
+            }
+        };
+
         // --- Auth State Observer ---
         onAuthStateChanged(auth, (currentUser) => {
             // Check for legacy anonymous session
-            if (currentUser && currentUser.isAnonymous) {
-                console.log("Detectado usuário anônimo antigo. Desconectando para forçar Google Login...");
-                signOut(auth);
-                return;
-            }
+            // Legacy check removed to allow explicit Anonymous Login for testing
+            // if (currentUser && currentUser.isAnonymous) { ... }
 
             user = currentUser;
             const loginOverlay = document.getElementById('login-overlay');
@@ -5511,6 +5517,10 @@
                 <div
                     class="absolute inset-0 rounded-xl ring-2 ring-white/50 group-hover:ring-4 group-hover:ring-blue-500/30 transition-all">
                 </div>
+            </button>
+            <button onclick="window.handleAnonymousLogin()"
+                class="mt-4 px-6 py-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 text-sm font-medium transition-colors">
+                Entrar como Visitante (Teste Local)
             </button>
             <p class="text-xs text-slate-600 mt-8">Protegido pelo Google Firebase</p>
         </div>
