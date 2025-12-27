@@ -15,7 +15,7 @@
     <!-- Ícone da Aba e PWA -->
     <link rel="icon" id="app-icon" href="logo.png" type="image/png">
     <link rel="apple-touch-icon" href="logo.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" id="manifest-placeholder" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca para gerar PDF -->
@@ -145,12 +145,31 @@
         }
 
         .rec-tooltip {
-            @apply absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none;
+            position: absolute;
+            bottom: 100%;
+            margin-bottom: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1e293b;
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        .group:hover .rec-tooltip {
+            opacity: 1;
         }
     </style>
 </head>
 
 <body class="text-slate-800 dark:text-slate-100 h-screen flex overflow-hidden bg-slate-50 dark:bg-slate-900">
+
 
     <!-- SIDEBAR -->
     <div id="sidebar-overlay" onclick="toggleSidebar()"
@@ -1348,6 +1367,10 @@
 
         let currentContext = 'dashboard';
 
+        // DEBUG CP 1
+        console.log("DEBUG CP: 1 (START)");
+        if (window.updateStatus) window.updateStatus('render', 'CP: 1 (START)', 'white');
+
         // --- Auth Functions ---
         window.loginWithGoogle = async () => {
             try {
@@ -1378,6 +1401,10 @@
 
         // --- Auth State Observer ---
         onAuthStateChanged(auth, (currentUser) => {
+            // Updated for external access
+            window.user = currentUser;
+            if (window.updateStatus) window.updateStatus('auth', currentUser ? 'LOGGED IN' : 'LOGGED OUT', currentUser ? 'lime' : 'orange');
+
             // Check for legacy anonymous session
             // Legacy check removed to allow explicit Anonymous Login for testing
             // if (currentUser && currentUser.isAnonymous) { ... }
@@ -1452,6 +1479,7 @@
 
         // --- Realtime Listeners ---
         function setupRealtimeListeners(userId) {
+            if (window.updateStatus) window.updateStatus('listener', 'ACTIVE', 'lime');
             // Clear existing listeners just in case
             unsubscribeListeners.forEach(unsub => unsub());
             unsubscribeListeners = [];
@@ -1611,21 +1639,83 @@
 
         // --- Wrapper Functions (Updated to use auth.currentUser.uid) ---
         window.firebaseSaveAsset = async (assetData) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                // Visitor Mode Save
+                const ctx = assetData.category;
+                assetData.id = assetData.id || Date.now().toString(); // Ensure ID
+                if (ctx === 'tesouro') window.mockTesouroAssets.push(assetData);
+                else if (ctx === 'reserva') window.mockReservaAssets.push(assetData);
+                else if (ctx === 'renda-fixa') window.mockRendaFixaAssets.push(assetData);
+                else window.mockRendaVariavelAssets.push(assetData);
+
+                // Re-render
+                if (window.renderDashboard) renderDashboard();
+                if (ctx === 'renda-variavel') renderRendaVariavel();
+                else if (ctx === 'tesouro') renderTesouro();
+                else if (ctx === 'renda-fixa') renderRendaFixa();
+                else renderReserva();
+                return;
+            }
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'assets'), assetData);
             } catch (e) { console.error(e); alert("Erro ao salvar."); }
         };
 
         window.firebaseUpdateAsset = async (id, data) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                // Visitor Mode Update
+                const updateInArray = (arr) => {
+                    const idx = arr.findIndex(a => a.id == id);
+                    if (idx !== -1) {
+                        arr[idx] = { ...arr[idx], ...data };
+                        return true;
+                    }
+                    return false;
+                };
+
+                let found = updateInArray(window.mockReservaAssets);
+                if (!found) found = updateInArray(window.mockRendaFixaAssets);
+                if (!found) found = updateInArray(window.mockTesouroAssets);
+                if (!found) found = updateInArray(window.mockRendaVariavelAssets);
+
+                // Re-render
+                if (window.renderDashboard) renderDashboard();
+                if (currentContext === 'renda-variavel') renderRendaVariavel();
+                else if (currentContext === 'tesouro') renderTesouro();
+                else if (currentContext === 'renda-fixa') renderRendaFixa();
+                else if (currentContext === 'reserva') renderReserva();
+                return;
+            }
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'assets', id), data);
             } catch (e) { console.error(e); }
         };
 
         window.firebaseDeleteAsset = async (id) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                // Visitor Mode Delete
+                const deleteInArray = (arr) => {
+                    const idx = arr.findIndex(a => a.id == id);
+                    if (idx !== -1) {
+                        arr.splice(idx, 1);
+                        return true;
+                    }
+                    return false;
+                };
+
+                let found = deleteInArray(window.mockReservaAssets);
+                if (!found) found = deleteInArray(window.mockRendaFixaAssets);
+                if (!found) found = deleteInArray(window.mockTesouroAssets);
+                if (!found) found = deleteInArray(window.mockRendaVariavelAssets);
+
+                // Re-render
+                if (window.renderDashboard) renderDashboard();
+                if (currentContext === 'renda-variavel') renderRendaVariavel();
+                else if (currentContext === 'tesouro') renderTesouro();
+                else if (currentContext === 'renda-fixa') renderRendaFixa();
+                else if (currentContext === 'reserva') renderReserva();
+                return;
+            }
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'assets', id));
             } catch (e) { console.error(e); }
@@ -1721,7 +1811,7 @@
     </script>
 
     <script>
-        let currentContext = 'dashboard';
+        // currentContext declaration removed (duplicate)
         let currentUsdRate = 5.00;
         window.annualGoal = 0; // Transformado em variável global
         // Initial State for Goals (Default)
@@ -2409,6 +2499,10 @@
             return total12m / 12;
         };
 
+        // DEBUG CP 2
+        console.log("DEBUG CP: 2 (MIDDLE)");
+        if (window.updateStatus) window.updateStatus('render', 'CP: 2 (MID)', 'yellow');
+
         function renderRendaVariavel(filter = window.currentRvFilter || 'all') {
             const currentUsdRate = window.currentUsdRate || 5.0;
             window.currentRvFilter = filter;
@@ -2838,6 +2932,7 @@
         }
 
         function renderDashboard() {
+            if (window.updateStatus) window.updateStatus('render', 'CALLED (' + new Date().toLocaleTimeString() + ')', 'lime');
             const metrics = calculateGlobalMetrics();
             document.getElementById('dash-total-balance').textContent = formatCurrency(metrics.totalValue);
 
@@ -3211,6 +3306,7 @@
             }
         }
 
+
         window.updateGoal = (catId, val) => {
             if (window.firebaseSaveRebalanceGoals) window.firebaseSaveRebalanceGoals(window.rebalanceGoals);
         };
@@ -3267,72 +3363,185 @@
             showSuccessMessage("Padrões restaurados!");
         };
 
-        const categories = [
-            { id: 'reserva', name: 'Reserva de Emergência', icon: 'fa-shield-heart', color: 'text-emerald-600', bg: 'bg-emerald-100' },
-            { id: 'renda-fixa', name: 'Renda Fixa', icon: 'fa-building-columns', color: 'text-blue-600', bg: 'bg-blue-100' },
-            { id: 'renda-variavel', name: 'Renda Variável', icon: 'fa-chart-line', color: 'text-purple-600', bg: 'bg-purple-100' },
-            { id: 'aposentadoria', name: 'Aposentadoria', icon: 'fa-umbrella-beach', color: 'text-orange-600', bg: 'bg-orange-100' }
-        ];
+        window.renderRebalanceamento = () => {
+            const container = document.getElementById('rebalance-container'); if (!container) return;
+            container.innerHTML = '';
 
-        const violations = [];
+            // --- CALCULA TOTAIS ATUAIS ---
+            const totals = { 'reserva': 0, 'renda-fixa': 0, 'renda-variavel': 0, 'aposentadoria': 0 };
+            const subTotals = { 'reserva': {}, 'renda-fixa': {}, 'renda-variavel': {}, 'aposentadoria': {} };
 
-        categories.forEach(cat => {
-            const currentVal = totals[cat.id]; const targetPerc = window.rebalanceGoals[cat.id].target; const targetVal = totalWithCaixa * (targetPerc / 100); const difference = targetVal - currentVal; const currentPerc = totalWithCaixa > 0 ? (currentVal / totalWithCaixa * 100) : 0;
+            // Helper soma
+            const sum = (list, catId, subKeyFn) => {
+                list.forEach(a => {
+                    let val = 0;
+                    if (a.current !== undefined) val = a.current;
+                    else val = a.quantity * a.currentPrice;
 
-            // ORDEM FIXA DAS SUBCATEGORIAS
-            let subKeys = [];
-            if (cat.id === 'reserva') subKeys = ['Reserva', 'Tesouro Selic'];
-            else if (cat.id === 'renda-fixa') subKeys = ['Renda Fixa CDI', 'Renda Fixa IPCA', 'Tesouro IPCA'];
-            else if (cat.id === 'renda-variavel') subKeys = ['Ações', 'FIIs', 'Exterior', 'Cripto'];
-            else if (cat.id === 'aposentadoria') subKeys = ['Tesouro Renda+'];
-            else subKeys = Object.keys(window.rebalanceGoals[cat.id].subs); // Fallback
+                    if (a.currency === 'USD') val *= (window.currentUsdRate || 5.0);
 
-            // Filter keys that actually exist in goals (in case one is missing for some reason)
-            subKeys = subKeys.filter(k => window.rebalanceGoals[cat.id].subs[k] !== undefined);
+                    totals[catId] += val;
 
-            // Check if there are extra keys not in fixed list and append them (just in case)
-            const allKeys = Object.keys(window.rebalanceGoals[cat.id].subs);
-            allKeys.forEach(k => { if (!subKeys.includes(k)) subKeys.push(k); });
+                    // Subtotals
+                    const subKey = subKeyFn(a);
+                    if (subKey) {
+                        if (!subTotals[catId][subKey]) subTotals[catId][subKey] = 0;
+                        subTotals[catId][subKey] += val;
+                    }
+                });
+            };
 
-            const subPercSum = subKeys.reduce((acc, k) => acc + window.rebalanceGoals[cat.id].subs[k], 0); const isSumCorrect = Math.abs(subPercSum - targetPerc) < 0.1;
+            sum(window.mockReservaAssets, 'reserva', (a) => a.type === 'Tesouro Selic' ? 'Tesouro Selic' : 'Reserva');
+            sum(window.mockRendaFixaAssets, 'renda-fixa', (a) => {
+                if (a.type && a.type.includes('Tesouro')) return 'Tesouro IPCA'; // Simplificacao
+                if (a.rate && (a.rate.includes('IPCA') || a.rate.includes('IGPM'))) return 'Renda Fixa IPCA';
+                return 'Renda Fixa CDI';
+            });
+            sum(window.mockRendaVariavelAssets, 'renda-variavel', (a) => {
+                if (a.type === 'Ação') return 'Ações';
+                if (a.type === 'FII') return 'FIIs';
+                return a.type; // Exterior, Cripto
+            });
+            // Aposentadoria (Tesouro Renda+)
+            sum(window.mockTesouroAssets.filter(a => a.type && a.type.includes('Renda+')), 'aposentadoria', () => 'Tesouro Renda+');
+            // Remover Renda+ do Tesouro IPCA/Selic se tiver duplicado? 
+            // O mockTesouroAssets tem tudo. Precisamos filtrar corretamente.
+            // Simplificação: Vamos assumir que Tesouro Renda+ só entra em Aposentadoria.
+            // E os outros Tesouros entram em Reserva (Selic) ou Renda Fixa (IPCA/Pre).
 
-            // Validação: Subcategorias não podem exceder a categoria principal
-            if (subPercSum > targetPerc + 0.001) {
-                violations.push(`<b>${cat.name}</b>: Soma das subs (${subPercSum.toFixed(1)}%) excede a meta da categoria (${targetPerc.toFixed(1)}%)`);
-            }
+            // Recalcular totais com filtros melhores
+            totals['reserva'] = 0; totals['renda-fixa'] = 0; totals['renda-variavel'] = 0; totals['aposentadoria'] = 0;
+            subTotals['reserva'] = {}; subTotals['renda-fixa'] = {}; subTotals['renda-variavel'] = {}; subTotals['aposentadoria'] = {};
 
-            const isHiddenClass = expandedState[cat.id] ? '' : 'hidden'; // Usa o estado preservado
+            window.mockReservaAssets.forEach(a => {
+                totals['reserva'] += a.current;
+                const k = a.type === 'Tesouro Selic' ? 'Tesouro Selic' : 'Reserva';
+                subTotals['reserva'][k] = (subTotals['reserva'][k] || 0) + a.current;
+            });
 
-            // ADDED: Unique IDs for Inputs & oninput for Local Update
-            const item = document.createElement('div'); item.className = "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm";
-            item.innerHTML = `<div class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" onclick="document.getElementById('sub-${cat.id}').classList.toggle('hidden')"><div class="flex items-center gap-4 flex-1"><div class="w-10 h-10 rounded-lg ${cat.bg} ${cat.color} flex items-center justify-center"><i class="fa-solid ${cat.icon}"></i></div><div><h4 class="font-bold text-slate-800 dark:text-slate-100">${cat.name}</h4><div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><span>Atual: ${currentPerc.toFixed(1)}%</span></div></div></div><div class="flex items-center gap-6"><div class="text-right flex flex-col items-end"><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Meta</span><div class="flex items-center gap-1"><input type="number" id="goal-${cat.id}" value="${targetPerc}" oninput="updateGoalLocal('${cat.id}', this.value)" onchange="updateGoal('${cat.id}', this.value)" onclick="event.stopPropagation()" class="w-14 text-right border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200">%</div></div><div class="w-32 hidden md:block"><div class="flex justify-between text-[10px] mb-1"><span>Aporte Sugerido</span><span class="${difference > 0 ? 'text-blue-600' : 'text-emerald-600'} font-bold">${difference > 0 ? formatCurrency(difference) : '0,00'}</span></div><div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${difference > 0 ? 'bg-blue-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, (currentVal / targetVal) * 100)}%"></div></div></div><i class="fa-solid fa-chevron-down text-slate-300 ml-2"></i></div></div><div id="sub-${cat.id}" class="${isHiddenClass} bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-4 space-y-1">${subKeys.map(subKey => { const subCurrent = subTotals[cat.id][subKey] || 0; const subTargetPerc = window.rebalanceGoals[cat.id].subs[subKey]; const subTargetVal = totalWithCaixa * (subTargetPerc / 100); const subDiff = subTargetVal - subCurrent; return `<div class="flex items-center justify-between text-sm py-2 px-2 rounded hover:bg-slate-100/80 dark:hover:bg-slate-700/80 transition-colors"><div class="flex items-center gap-3 flex-1"><div class="w-1.5 h-1.5 rounded-full ${subDiff > 0 ? 'bg-blue-400' : 'bg-emerald-400'}"></div><span class="text-slate-600 dark:text-slate-400 font-medium">${subKey}</span></div><div class="flex items-center gap-6"><span class="text-slate-400 text-xs w-20 text-right">${formatCurrency(subCurrent)}</span><div class="flex items-center gap-1 w-16 justify-end"><input type="number" id="subgoal-${cat.id}-${subKey.replace(/\s+/g, '_')}" value="${subTargetPerc}" class="w-10 text-right bg-transparent border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none text-xs font-bold text-slate-600 dark:text-slate-400" oninput="updateSubGoalLocal('${cat.id}', '${subKey}', this.value)" onchange="updateSubGoal('${cat.id}', '${subKey}', this.value)">%</div><div class="w-24 text-right"><span class="text-xs font-bold ${subDiff > 0 ? 'text-blue-600' : 'text-slate-400'}">${subDiff > 0 ? '+' + formatCurrency(subDiff) : '-'}</span></div></div></div>`; }).join('')}</div>`;
-            container.appendChild(item);
-        });
+            window.mockRendaFixaAssets.forEach(a => {
+                totals['renda-fixa'] += a.current;
+                let k = 'Renda Fixa CDI';
+                if (a.rate && (a.rate.includes('IPCA') || a.rate.includes('IGPM'))) k = 'Renda Fixa IPCA';
+                subTotals['renda-fixa'][k] = (subTotals['renda-fixa'][k] || 0) + a.current;
+            });
 
-        if (violations.length > 0) {
-            const div = document.createElement('div');
-            div.className = "bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r shadow-sm flex items-start gap-3";
-            div.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i><div><p class="font-bold text-red-700 text-sm">Atenção: A soma das subcategorias excede a meta principal:</p><ul class="text-sm text-red-600 list-disc list-inside">${violations.map(v => `<li>${v}</li>`).join('')}</ul></div>`;
-            container.prepend(div);
-        }
+            window.mockTesouroAssets.forEach(a => {
+                let val = a.current;
+                if (a.type && a.type.includes('Renda+')) {
+                    totals['aposentadoria'] += val;
+                    subTotals['aposentadoria']['Tesouro Renda+'] = (subTotals['aposentadoria']['Tesouro Renda+'] || 0) + val;
+                } else if (a.type && a.type.includes('Selic')) {
+                    totals['reserva'] += val;
+                    subTotals['reserva']['Tesouro Selic'] = (subTotals['reserva']['Tesouro Selic'] || 0) + val;
+                } else {
+                    totals['renda-fixa'] += val;
+                    subTotals['renda-fixa']['Tesouro IPCA'] = (subTotals['renda-fixa']['Tesouro IPCA'] || 0) + val;
+                }
+            });
 
-        // Restauração de Foco e Valor
-        if (activeId) {
-            const el = document.getElementById(activeId);
-            if (el) {
-                // Se o elemento ativo é um dos inputs de meta, restaura o valor "cru" que o usuário estava digitando
-                // Isso impede que um update externo sobrescreva "5." com "5", ou mova o cursor
-                if (activeValue !== null) {
-                    el.value = activeValue;
+            window.mockRendaVariavelAssets.forEach(a => {
+                let val = a.quantity * a.currentPrice;
+                if (a.currency === 'USD') val *= (window.currentUsdRate || 5.0);
+                totals['renda-variavel'] += val;
+                let k = a.type;
+                if (k === 'Ação') k = 'Ações'; if (k === 'FII') k = 'FIIs';
+                subTotals['renda-variavel'][k] = (subTotals['renda-variavel'][k] || 0) + val;
+            });
+
+            // --- CAIXA ---
+            const caixaInput = document.getElementById('reb-caixa');
+            const caixaVal = caixaInput ? window.parseCurrencyValue(caixaInput.value) : 0;
+            const totalWithCaixa = Object.values(totals).reduce((a, b) => a + b, 0) + caixaVal;
+
+            // Estado de Expansão (Preservar)
+            const expandedState = {};
+            ['reserva', 'renda-fixa', 'renda-variavel', 'aposentadoria'].forEach(id => {
+                const el = document.getElementById('sub-' + id);
+                if (el && !el.classList.contains('hidden')) expandedState[id] = true;
+            });
+
+            const categories = [
+                { id: 'reserva', name: 'Reserva de Emergência', icon: 'fa-shield-heart', color: 'text-emerald-600', bg: 'bg-emerald-100' },
+                { id: 'renda-fixa', name: 'Renda Fixa', icon: 'fa-building-columns', color: 'text-blue-600', bg: 'bg-blue-100' },
+                { id: 'renda-variavel', name: 'Renda Variável', icon: 'fa-chart-line', color: 'text-purple-600', bg: 'bg-purple-100' },
+                { id: 'aposentadoria', name: 'Aposentadoria', icon: 'fa-umbrella-beach', color: 'text-orange-600', bg: 'bg-orange-100' }
+            ];
+
+            const violations = [];
+
+            categories.forEach(cat => {
+                // SAFEGUARD: Ensure data existence
+                if (!window.rebalanceGoals || !window.rebalanceGoals[cat.id]) {
+                    console.error("Missing rebalance goal for:", cat.id);
+                    return;
+                }
+                const goalData = window.rebalanceGoals[cat.id];
+                const currentVal = totals[cat.id] || 0;
+                const targetPerc = goalData.target || 0;
+                const targetVal = totalWithCaixa * (targetPerc / 100);
+                const difference = targetVal - currentVal;
+                const currentPerc = totalWithCaixa > 0 ? (currentVal / totalWithCaixa * 100) : 0;
+
+                // ORDEM FIXA DAS SUBCATEGORIAS
+                let subKeys = [];
+                if (cat.id === 'reserva') subKeys = ['Reserva', 'Tesouro Selic'];
+                else if (cat.id === 'renda-fixa') subKeys = ['Renda Fixa CDI', 'Renda Fixa IPCA', 'Tesouro IPCA'];
+                else if (cat.id === 'renda-variavel') subKeys = ['Ações', 'FIIs', 'Exterior', 'Cripto'];
+                else if (cat.id === 'aposentadoria') subKeys = ['Tesouro Renda+'];
+                else subKeys = Object.keys(goalData.subs || {});
+
+                // Filter keys that actually exist in goals
+                const goalSubs = goalData.subs || {};
+                subKeys = subKeys.filter(k => goalSubs[k] !== undefined);
+
+                // Check extra keys
+                const allKeys = Object.keys(goalSubs);
+                allKeys.forEach(k => { if (!subKeys.includes(k)) subKeys.push(k); });
+
+                const subPercSum = subKeys.reduce((acc, k) => acc + (goalSubs[k] || 0), 0);
+
+                // Validação
+                if (subPercSum > targetPerc + 0.001) {
+                    violations.push(`<b>${cat.name}</b>: Soma das subs (${subPercSum.toFixed(1)}%) excede a meta da categoria (${targetPerc.toFixed(1)}%)`);
                 }
 
-                el.focus();
-                if (selectionStart !== null && selectionEnd !== null) {
-                    try { el.setSelectionRange(selectionStart, selectionEnd); } catch (e) { }
+                const isHiddenClass = expandedState[cat.id] ? '' : 'hidden';
+
+                // ADDED: Unique IDs for Inputs & oninput for Local Update
+                const item = document.createElement('div'); item.className = "bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm";
+                item.innerHTML = `<div class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors" onclick="document.getElementById('sub-${cat.id}').classList.toggle('hidden')"><div class="flex items-center gap-4 flex-1"><div class="w-10 h-10 rounded-lg ${cat.bg} ${cat.color} flex items-center justify-center"><i class="fa-solid ${cat.icon}"></i></div><div><h4 class="font-bold text-slate-800 dark:text-slate-100">${cat.name}</h4><div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><span>Atual: ${currentPerc.toFixed(1)}%</span></div></div></div><div class="flex items-center gap-6"><div class="text-right flex flex-col items-end"><span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Meta</span><div class="flex items-center gap-1"><input type="number" id="goal-${cat.id}" value="${targetPerc}" oninput="updateGoalLocal('${cat.id}', this.value)" onchange="updateGoal('${cat.id}', this.value)" onclick="event.stopPropagation()" class="w-14 text-right border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200">%</div></div><div class="w-32 hidden md:block"><div class="flex justify-between text-[10px] mb-1"><span>Aporte Sugerido</span><span class="${difference > 0 ? 'text-blue-600' : 'text-emerald-600'} font-bold">${difference > 0 ? formatCurrency(difference) : '0,00'}</span></div><div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${difference > 0 ? 'bg-blue-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, (currentVal / targetVal) * 100)}%"></div></div></div><i class="fa-solid fa-chevron-down text-slate-300 ml-2"></i></div></div><div id="sub-${cat.id}" class="${isHiddenClass} bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-4 space-y-1">${subKeys.map(subKey => { const subCurrent = (subTotals[cat.id] && subTotals[cat.id][subKey]) || 0; const subTargetPerc = goalSubs[subKey] || 0; const subTargetVal = totalWithCaixa * (subTargetPerc / 100); const subDiff = subTargetVal - subCurrent; return `<div class="flex items-center justify-between text-sm py-2 px-2 rounded hover:bg-slate-100/80 dark:hover:bg-slate-700/80 transition-colors"><div class="flex items-center gap-3 flex-1"><div class="w-1.5 h-1.5 rounded-full ${subDiff > 0 ? 'bg-blue-400' : 'bg-emerald-400'}"></div><span class="text-slate-600 dark:text-slate-400 font-medium">${subKey}</span></div><div class="flex items-center gap-6"><span class="text-slate-400 text-xs w-20 text-right">${formatCurrency(subCurrent)}</span><div class="flex items-center gap-1 w-16 justify-end"><input type="number" id="subgoal-${cat.id}-${subKey.replace(/\s+/g, '_')}" value="${subTargetPerc}" class="w-10 text-right bg-transparent border-b border-slate-300 dark:border-slate-600 focus:border-primary outline-none text-xs font-bold text-slate-600 dark:text-slate-400" oninput="updateSubGoalLocal('${cat.id}', '${subKey}', this.value)" onchange="updateSubGoal('${cat.id}', '${subKey}', this.value)">%</div><div class="w-24 text-right"><span class="text-xs font-bold ${subDiff > 0 ? 'text-blue-600' : 'text-slate-400'}">${subDiff > 0 ? '+' + formatCurrency(subDiff) : '-'}</span></div></div></div>`; }).join('')}</div>`;
+                container.appendChild(item);
+            });
+
+            if (violations.length > 0) {
+                const div = document.createElement('div');
+                div.className = "bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r shadow-sm flex items-start gap-3";
+                div.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i><div><p class="font-bold text-red-700 text-sm">Atenção: A soma das subcategorias excede a meta principal:</p><ul class="text-sm text-red-600 list-disc list-inside">${violations.map(v => `<li>${v}</li>`).join('')}</ul></div>`;
+                div.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i><div><p class="font-bold text-red-700 text-sm">Atenção: A soma das subcategorias excede a meta principal:</p><ul class="text-sm text-red-600 list-disc list-inside">${violations.map(v => `<li>${v}</li>`).join('')}</ul></div>`;
+                container.prepend(div);
+            }
+
+
+
+            // Restauração de Foco e Valor
+            if (activeId) {
+                const el = document.getElementById(activeId);
+                if (el) {
+                    // Se o elemento ativo é um dos inputs de meta, restaura o valor "cru" que o usuário estava digitando
+                    // Isso impede que um update externo sobrescreva "5." com "5", ou mova o cursor
+                    if (activeValue !== null) {
+                        el.value = activeValue;
+                    }
+
+                    el.focus();
+                    if (selectionStart !== null && selectionEnd !== null) {
+                        try { el.setSelectionRange(selectionStart, selectionEnd); } catch (e) { }
+                    }
                 }
             }
-        }
-        }
+
+        };
 
         window.updateGoal = (catId, val) => {
             if (window.firebaseSaveRebalanceGoals) window.firebaseSaveRebalanceGoals(window.rebalanceGoals);
@@ -3721,13 +3930,22 @@
             modal.classList.remove('hidden');
 
             // Fix: Proventos context should open Renda Variável input
-            if (currentContext === 'proventos') {
+            if (window.currentContext === 'proventos') {
                 selectCategory('renda-variavel');
-            } else if (currentContext === 'dashboard' || currentContext === 'rebalanceamento') {
+            } else if (window.currentContext === 'dashboard' || window.currentContext === 'rebalanceamento') {
                 document.getElementById('modal-title').textContent = "Novo Aporte";
-                selector.classList.remove('hidden'); selector.classList.add('grid');
-                fields.classList.add('hidden'); fields.classList.remove('grid');
-                actions.classList.add('hidden'); actions.classList.remove('flex');
+                if (selector) {
+                    selector.classList.remove('hidden');
+                    selector.classList.add('grid');
+                }
+                if (fields) {
+                    fields.classList.add('hidden');
+                    fields.classList.remove('grid');
+                }
+                if (actions) {
+                    actions.classList.add('hidden');
+                    actions.classList.remove('flex');
+                }
             } else {
                 selectCategory(currentContext);
             }
@@ -4004,7 +4222,7 @@
                 const currency = document.getElementById('input-currency')?.value || 'BRL';
                 if (!ticker || qty <= 0 || price <= 0) return alert("Preencha todos os campos corretamente.");
                 const totalSpent = (qty * price) + costs; const avgPriceWithCosts = totalSpent / qty;
-                newItem = { dateInv, type, ticker, quantity: qty, avgPrice: avgPriceWithCosts, currentPrice: price, broker: broker, currency, category: 'renda-variavel' };
+                newItem = { id: Date.now().toString(), dateInv, type, ticker, quantity: qty, avgPrice: avgPriceWithCosts, currentPrice: price, broker: broker, currency, category: 'renda-variavel' };
             } else {
                 if (context === 'tesouro') {
                     const type = document.getElementById('input-type').value;
@@ -4062,14 +4280,33 @@
                     const rate = getFormattedRate();
                     // invested comes from calc, unmasked
                     const investedCalc = parseFloat(document.getElementById('input-total-calc').value) || (qty * unitPrice);
-                    newItem = { dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
+                    newItem = { id: Date.now().toString(), dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
                 } else {
                     const type = document.getElementById('input-type').value; const issuer = document.getElementById('input-issuer').value;
                     const invested = window.parseCurrencyValue(document.getElementById('input-invested').value);
                     const maturity = document.getElementById('input-maturity').value;
                     const rate = getFormattedRate();
-                    newItem = { dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
+                    newItem = { id: Date.now().toString(), dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
                 }
+            }
+
+
+
+            // Guest Mode / Fallback Persistence
+            if (!window.currentUser && context !== 'renda-variavel') { // RV already has some mock handling, but let's unify
+                if (context === 'reserva') {
+                    window.mockReservaAssets.push(newItem);
+                    if (window.renderReserva) window.renderReserva();
+                } else if (context === 'renda-fixa') {
+                    window.mockRendaFixaAssets.push(newItem);
+                    if (window.renderRendaFixa) window.renderRendaFixa();
+                } else if (context === 'tesouro') {
+                    window.mockTesouroAssets.push(newItem);
+                    if (window.renderTesouro) window.renderTesouro();
+                }
+                closeModal();
+                showSuccessMessage("Salvo localmente (Visitante)!");
+                return;
             }
 
             if (editId) {
@@ -4086,10 +4323,15 @@
                     closeModal();
                     showSuccessMessage("Enviando para o Firebase...");
                 } else {
+                    // Fallback if generic save fails
                     alert("Erro: Conexão com Firebase não encontrada.");
                 }
             }
         };
+
+        // DEBUG CP 3
+        console.log("DEBUG CP: 3 (LATE)");
+        if (window.updateStatus) window.updateStatus('render', 'CP: 3 (LATE)', 'orange');
 
         // --- LÓGICA DE FILTRAGEM DO TESOURO ---
         // --- LÓGICA DE FILTRAGEM GENÉRICA (Tesouro e Renda Variável) ---
@@ -4518,24 +4760,171 @@
             else if (context === 'renda-fixa') renderRendaFixa();
             else renderReserva();
         };
+
+        window.openDeleteModal = (id) => {
+            document.getElementById('delete-target-id').value = id;
+            const modal = document.getElementById('delete-confirmation-modal');
+            modal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        };
+
+        window.closeDeleteModal = () => {
+            const modal = document.getElementById('delete-confirmation-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        window.confirmDelete = () => {
+            const id = document.getElementById('delete-target-id').value;
+            if (id && window.firebaseDeleteAsset) {
+                window.firebaseDeleteAsset(id);
+                closeDeleteModal();
+                showSuccessMessage("Ativo excluído!");
+                // Force Update
+                setTimeout(() => {
+                    if (window.renderDashboard) window.renderDashboard();
+                }, 500);
+            }
+        };
+
+        window.openEditModal = (id) => {
+            let asset;
+            if (currentContext === 'renda-variavel') asset = window.mockRendaVariavelAssets.find(a => a.id == id);
+            else if (currentContext === 'tesouro') asset = window.mockTesouroAssets.find(a => a.id == id);
+            else if (currentContext === 'renda-fixa') asset = window.mockRendaFixaAssets.find(a => a.id == id);
+            else {
+                asset = window.mockReservaAssets.find(a => a.id == id);
+                if (!asset) asset = window.mockTesouroAssets.find(a => a.id == id);
+            }
+
+            if (!asset) return;
+
+            let cat = asset.category;
+            // Correction for mapped categories
+            if (currentContext === 'tesouro') cat = 'tesouro';
+            if (currentContext === 'renda-fixa') cat = 'renda-fixa';
+            if (currentContext === 'reserva') cat = 'reserva';
+
+            selectCategory(cat);
+            window.openModal();
+
+            document.getElementById('edit-asset-id').value = id;
+            const titleEl = document.getElementById('modal-title');
+            if (titleEl) titleEl.textContent = "Editar Ativo";
+            const btnText = document.getElementById('modal-save-btn-text');
+            if (btnText) btnText.textContent = "Atualizar";
+
+            setTimeout(() => {
+                if (cat === 'renda-variavel') {
+                    if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type;
+                    if (document.getElementById('input-ticker')) document.getElementById('input-ticker').value = asset.ticker;
+                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = asset.quantity;
+                    if (document.getElementById('input-buy-price')) document.getElementById('input-buy-price').value = (asset.currentPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    if (document.getElementById('input-broker')) document.getElementById('input-broker').value = asset.broker || '';
+                    if (document.getElementById('application-date')) document.getElementById('application-date').value = asset.dateInv;
+                } else if (cat === 'tesouro') {
+                    if (document.getElementById('input-issuer')) document.getElementById('input-issuer').value = asset.issuer || 'Tesouro Nacional';
+                    if (document.getElementById('input-maturity')) document.getElementById('input-maturity').value = asset.maturity || '';
+                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = asset.quantity || 0;
+                    if (document.getElementById('input-unit-price')) document.getElementById('input-unit-price').value = (asset.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    if (document.getElementById('input-broker')) document.getElementById('input-broker').value = asset.broker || '';
+                    if (document.getElementById('application-date')) document.getElementById('application-date').value = asset.dateInv;
+                } else {
+                    if (document.getElementById('input-issuer')) document.getElementById('input-issuer').value = asset.issuer || '';
+                    if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type || 'CDB';
+                    if (document.getElementById('input-invested')) document.getElementById('input-invested').value = (asset.invested || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    if (document.getElementById('input-broker')) document.getElementById('input-broker').value = asset.broker || '';
+                    if (document.getElementById('application-date')) document.getElementById('application-date').value = asset.dateInv;
+                    if (document.getElementById('input-maturity')) document.getElementById('input-maturity').value = asset.maturity || '';
+                }
+
+                // Parse and populate Rate (Rentabilidade)
+                if (asset.rate && document.getElementById('input-rate-type') && document.getElementById('input-rate-val')) {
+                    const rType = document.getElementById('input-rate-type');
+                    const rVal = document.getElementById('input-rate-val');
+                    // Format examples: "10% CDI", "IPCA + 5%", "Selic + 2%", "12%" (PRE)
+                    if (asset.rate.includes('CDI')) {
+                        rType.value = 'CDI';
+                        rVal.value = parseFloat(asset.rate.replace('% CDI', ''));
+                    } else if (asset.rate.includes('IPCA')) {
+                        rType.value = 'IPCA';
+                        rVal.value = parseFloat(asset.rate.replace('IPCA + ', '').replace('%', ''));
+                    } else if (asset.rate.includes('Selic')) {
+                        rType.value = 'Selic';
+                        rVal.value = parseFloat(asset.rate.replace('Selic + ', '').replace('%', ''));
+                    } else if (asset.rate.includes('%')) {
+                        // PRE - but check options available
+                        // Tesouro has 'Tesouro Prefixado' in type, but rate logic selects 'PRE'
+                        rType.value = 'PRE';
+                        rVal.value = parseFloat(asset.rate.replace('%', ''));
+                    }
+                }
+            }, 100);
+        };
         window.closeLiquidationModal = () => { liqModal.classList.add('opacity-0'); document.getElementById('liquidation-modal-content').classList.remove('scale-100'); document.getElementById('liquidation-modal-content').classList.add('opacity-0', 'scale-95'); setTimeout(() => liqModal.classList.add('hidden'), 300); };
         function showSuccessMessage(msg) { const m = document.getElementById('success-modal'); const c = document.getElementById('success-modal-content'); document.getElementById('success-message').textContent = msg; m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('opacity-0', 'scale-95'); c.classList.add('scale-100'); }, 10); setTimeout(() => { m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('opacity-0', 'scale-95'); setTimeout(() => m.classList.add('hidden'), 300); }, 1500); }
 
-        function selectCategory(category) {
-            document.getElementById('modal-context').value = category;
-            renderModalFields(category);
-            document.getElementById('category-selector').classList.remove('grid');
-            document.getElementById('category-selector').classList.add('hidden');
-            document.getElementById('modal-fields-container').classList.remove('hidden');
-            document.getElementById('modal-fields-container').classList.add('grid');
-            document.getElementById('modal-actions').classList.remove('hidden');
-            document.getElementById('modal-actions').classList.add('flex');
-            const titles = { 'reserva': 'Novo Aporte Reserva', 'renda-fixa': 'Novo Aporte Renda Fixa', 'tesouro': 'Novo Aporte Tesouro', 'renda-variavel': 'Novo Aporte RV' };
-            document.getElementById('modal-title').textContent = titles[category];
+        window.selectCategory = function (category) {
+            console.log(">>> selectCategory STARTED:", category);
+            try {
+                // Ensure helper functions are available
+                if (typeof renderModalFields !== 'function') throw new Error('renderModalFields not found');
+
+                const ctx = document.getElementById('modal-context');
+                if (ctx) ctx.value = category;
+
+                console.log(">>> Calling renderModalFields...");
+                renderModalFields(category);
+                console.log(">>> renderModalFields RETURNED.");
+
+                const selector = document.getElementById('category-selector');
+                const fields = document.getElementById('modal-fields-container');
+                const actions = document.getElementById('modal-actions');
+                const title = document.getElementById('modal-title');
+
+                if (selector) { selector.classList.remove('grid'); selector.classList.add('hidden'); }
+                if (fields) { fields.classList.remove('hidden'); fields.classList.add('grid'); }
+                if (actions) { actions.classList.remove('hidden'); actions.classList.add('flex'); }
+
+                const titles = { 'reserva': 'Novo Aporte Reserva', 'renda-fixa': 'Novo Aporte Renda Fixa', 'tesouro': 'Novo Aporte Tesouro', 'renda-variavel': 'Novo Aporte RV' };
+                if (title) title.textContent = titles[category] || 'Novo Aporte';
+
+                console.log(">>> selectCategory FINISHED.");
+            } catch (e) {
+                console.error("Critical error in selectCategory:", e);
+                alert("Erro ao abrir categoria: " + e.message);
+            }
+        };
+
+        // Helper for Masking
+        function attachCurrencyMask(selector) {
+            const inputs = document.querySelectorAll(selector);
+            inputs.forEach(input => {
+                input.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, "");
+                    value = (parseFloat(value) / 100).toFixed(2) + "";
+                    e.target.value = value.replace(".", ",");
+                });
+            });
         }
 
-        function renderModalFields(context) {
+        window.renderModalFields = function (context) {
+            console.log(">>> renderModalFields STARTED:", context);
             const modalFields = document.getElementById('modal-fields-container');
+
+            // Render logic...
+
+            // Post-render: Attach masks to new inputs
+            setTimeout(() => {
+                attachCurrencyMask('#input-buy-price');
+                attachCurrencyMask('#input-unit-price');
+                attachCurrencyMask('#input-invested');
+                attachCurrencyMask('#input-other-costs');
+            }, 100);
+
             if (context === 'renda-variavel') {
                 // Adicionado campo Corretora, input wrappers com moeda dinâmica e placeholder
                 // E o evento onchange="autoSelectCurrency()" no select de Categoria
@@ -4562,7 +4951,7 @@
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço de Compra</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="number" id="input-buy-price" step="0.01" placeholder="0,00" oninput="calculateRVTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-buy-price" placeholder="0,00" oninput="calculateRVTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
@@ -4573,7 +4962,7 @@
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Outros Custos</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="number" id="input-other-costs" step="0.01" placeholder="0,00" oninput="calculateRVTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 text-slate-600 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-other-costs" placeholder="0,00" oninput="calculateRVTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 text-slate-600 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
@@ -4668,7 +5057,7 @@
                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Preço Unitário</label>
                             <div class="relative">
                                 <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                                <input type="number" id="input-unit-price" step="0.01" placeholder="0.00" oninput="calculateTesouroTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
+                                <input type="text" id="input-unit-price" placeholder="0.00" oninput="calculateTesouroTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                             </div>
                         </div>
                     </div>
@@ -4733,7 +5122,7 @@
                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Valor Investido</label>
                         <div class="relative">
                             <span class="absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="number" id="input-invested" step="0.01" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 font-bold text-lg outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-invested" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 font-bold text-lg outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div class="md:col-span-2 pb-2">
@@ -4747,7 +5136,9 @@
             document.getElementById('application-date').value = new Date().toISOString().split('T')[0];
 
             // Setup Enter Key for this newly rendered content
-            setupSaveOnEnter('modal-fields-container', window.saveNewAsset);
+            // Setup Enter Key for this newly rendered content
+            // TEMPORARILY REMOVED: Suspected cause of freeze
+            // if (window.setupSaveOnEnter) setupSaveOnEnter('modal-fields-container', window.saveNewAsset);
         }
 
         // --- LÓGICA DE PROVENTOS (NOVO) ---
@@ -4755,7 +5146,12 @@
 
         window.currentProventosFilter = 'all';
         window.currentProventosPage = 1;
+        window.currentProventosFilter = 'all';
+        window.currentProventosPage = 1;
         window.ITEMS_PER_PAGE = 25;
+
+        // Ensure Global Context is Initialized
+        window.currentContext = 'dashboard';
 
         window.renderProventos = (filter = window.currentProventosFilter) => {
             if (filter !== window.currentProventosFilter) {
@@ -5608,6 +6004,16 @@
             if (window.renderDashboard) window.renderDashboard();
             window.renderProventos();
         });
+
+        window.renderDashboard = renderDashboard;
+        window.renderRendaFixa = renderRendaFixa;
+        window.renderRendaVariavel = renderRendaVariavel;
+        window.renderTesouro = renderTesouro;
+        window.renderReserva = renderReserva;
+        window.renderProventos = renderProventos;
+        window.renderHistorico = renderHistorico;
+        window.renderRebalanceamento = renderRebalanceamento;
+        window.calculateGlobalMetrics = calculateGlobalMetrics;
     </script>
 
     <!-- Logout Confirmation Modal -->
@@ -5662,6 +6068,29 @@
                         class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/30">
                         Sim, Redefinir
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirmation-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[200] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm" id="delete-modal-content">
+            <div class="flex flex-col items-center text-center">
+                <div
+                    class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4 text-red-500 dark:text-red-400">
+                    <i class="fa-solid fa-trash-can text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Excluir Ativo?</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Essa ação não pode ser desfeita. O ativo será
+                    removido permanentemente do seu portfólio.</p>
+                <input type="hidden" id="delete-target-id">
+                <div class="flex gap-3 w-full">
+                    <button onclick="closeDeleteModal()"
+                        class="flex-1 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl font-medium transition-colors">Cancelar</button>
+                    <button onclick="confirmDelete()"
+                        class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-colors">Excluir</button>
                 </div>
             </div>
         </div>
@@ -5845,7 +6274,12 @@
         window.handleGoogleLogin = () => {
             if (window.loginWithGoogle) window.loginWithGoogle();
         }
+
     </script>
+    <!-- DEBUGGER OVERLAY -->
+    </script>
+
+
 </body>
 
 <script>
@@ -5883,7 +6317,7 @@
         }
 
         // Update Context Global
-        if (typeof currentContext !== 'undefined') currentContext = viewId;
+        window.currentContext = viewId;
 
         // Mobile Sidebar handling
         const sidebarOverlay = document.getElementById('sidebar-overlay');
