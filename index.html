@@ -1292,12 +1292,10 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, setDoc, getDoc, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // --- ÁREA DE CONFIGURAÇÃO DO FIREBASE (Edite aqui para Deploy) ---
-        // Preencha este objeto com as chaves do seu projeto Firebase para rodar no Netlify/Vercel.
-        // Deixe vazio enquanto estiver testando aqui no ambiente de chat.
         const clientCredentials = {
             apiKey: "AIzaSyCKIOuVjmbIo2KNDjwW7kE9P1nBj0O-oIE",
             authDomain: "meus-investimentos-260ce.firebaseapp.com",
@@ -1307,7 +1305,6 @@
             appId: "1:231648743488:web:f11778354e2c9751328fa5"
         };
 
-        // Lógica Híbrida: Usa suas chaves se preenchidas; caso contrário, usa o ambiente de teste.
         const firebaseConfig = (clientCredentials.apiKey)
             ? clientCredentials
             : JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
@@ -1315,61 +1312,90 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
-        // Define o ID do app (Nome da pasta no banco de dados)
-        // Em produção (com chaves preenchidas), usa um nome fixo limpo.
         const appId = (clientCredentials.apiKey)
             ? "meu_app_investimentos_prod"
             : (typeof __app_id !== 'undefined' ? __app_id : 'default-app-id').replace(/[./]/g, '_');
 
         let user = null;
+        let unsubscribeListeners = [];
 
-        // Autenticação
-        const initAuth = async () => {
-            // Se o usuário configurou credenciais próprias (clientCredentials), 
-            // não devemos usar o __initial_auth_token do Canvas, pois ele não bate com o projeto externo.
-            if (clientCredentials.apiKey) {
-                try {
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    console.error("Erro no login anônimo (Credenciais Próprias):", error);
-                    // Se der erro aqui, provavelmente o login anônimo não está ativado no console do Firebase do usuário
-                }
+        // Constants
+        const ANCIENT_ID = "portfolio_principal"; // Legacy ID for migration
+
+        // --- Auth Functions ---
+        window.loginWithGoogle = async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Login Error:", error);
+                alert("Erro ao fazer login: " + error.message);
+            }
+        };
+
+        window.handleLogout = async () => {
+            try {
+                await signOut(auth);
+                // Listeners are cleared in onAuthStateChanged
+            } catch (error) {
+                console.error("Logout Error:", error);
+            }
+        };
+
+        // --- Auth State Observer ---
+        onAuthStateChanged(auth, (currentUser) => {
+            // Check for legacy anonymous session
+            if (currentUser && currentUser.isAnonymous) {
+                console.log("Detectado usuário anônimo antigo. Desconectando para forçar Google Login...");
+                signOut(auth);
                 return;
             }
 
-            // Lógica padrão do Canvas (Ambiente de Teste)
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                try {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } catch (e) {
-                    console.warn("Token inválido ou expirado, tentando anônimo...", e);
-                    await signInAnonymously(auth);
-                }
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-        initAuth();
-
-        // ID fixo para compartilhar dados entre dispositivos (Modo Single User)
-        const SHARED_USER_ID = "portfolio_principal";
-
-        onAuthStateChanged(auth, (currentUser) => {
             user = currentUser;
+            const loginOverlay = document.getElementById('login-overlay');
             if (user) {
-                console.log("Conectado. Usando base compartilhada:", SHARED_USER_ID);
-                setupRealtimeListeners();
+                console.log("Conectado como:", user.uid);
+                if (loginOverlay) loginOverlay.classList.add('opacity-0', 'pointer-events-none');
+
+                // Update Header Name
+                const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
+                if (headerName) {
+                    headerName.textContent = user.displayName || user.email || "Usuário (Sem Nome)";
+                    headerName.classList.add('text-indigo-600');
+                }
+
+                setupRealtimeListeners(user.uid);
+            } else {
+                console.log("Desconectado.");
+                if (loginOverlay) loginOverlay.classList.remove('opacity-0', 'pointer-events-none');
+
+                const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
+                if (headerName) headerName.textContent = "Visitante";
+
+                // Clear Data / Listeners
+                unsubscribeListeners.forEach(unsub => unsub());
+                unsubscribeListeners = [];
+                window.mockReservaAssets.length = 0;
+                window.mockRendaFixaAssets.length = 0;
+                window.mockTesouroAssets.length = 0;
+                window.mockRendaVariavelAssets.length = 0;
+                window.proventos = [];
+                window.liquidationHistory = [];
+
+                // Refresh UI to Empty
+                if (window.renderDashboard) renderDashboard();
             }
         });
 
-        // Configuração dos Listeners do Firestore
-        function setupRealtimeListeners() {
-            if (!user) return;
+        // --- Realtime Listeners ---
+        function setupRealtimeListeners(userId) {
+            // Clear existing listeners just in case
+            unsubscribeListeners.forEach(unsub => unsub());
+            unsubscribeListeners = [];
 
-            // Alterado: Usa SHARED_USER_ID em vez de user.uid para sincronizar entre dispositivos
-            onSnapshot(collection(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'assets'), (snapshot) => {
-                // Limpar listas (agora usando as variáveis globais window.*)
+            // 1. Assets
+            const unsubAssets = onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'assets'), (snapshot) => {
                 window.mockReservaAssets.length = 0;
                 window.mockRendaFixaAssets.length = 0;
                 window.mockTesouroAssets.length = 0;
@@ -1377,9 +1403,8 @@
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const asset = { id: doc.id, ...data }; // Agora o ID é uma string do Firestore
+                    const asset = { id: doc.id, ...data };
 
-                    // Lógica simples para categorizar baseado no tipo/nome ou flag
                     if (asset.category === 'renda-variavel' || asset.ticker) {
                         window.mockRendaVariavelAssets.push(asset);
                     } else if (asset.category === 'tesouro' || (asset.type && asset.type.includes('Tesouro'))) {
@@ -1387,246 +1412,212 @@
                     } else if (asset.category === 'renda-fixa' || asset.type === 'Debenture') {
                         window.mockRendaFixaAssets.push(asset);
                     } else {
-                        // Default Reserva (CDBs etc salvo que especificado)
                         window.mockReservaAssets.push(asset);
                     }
                 });
 
-                // Atualizar tela atual
                 if (window.renderDashboard) {
                     if (currentContext === 'dashboard') renderDashboard();
                     else navigateTo(currentContext);
                 }
-            }, (error) => {
-                console.error("Erro ao buscar dados:", error);
             });
+            unsubscribeListeners.push(unsubAssets);
 
-            // Listener para o histórico (Também compartilhado)
-            onSnapshot(collection(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'history'), (snapshot) => {
+            // 2. History
+            const unsubHistory = onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'history'), (snapshot) => {
                 window.liquidationHistory.length = 0;
                 snapshot.forEach(doc => {
                     window.liquidationHistory.push({ id: doc.id, ...doc.data() });
                 });
                 if (currentContext === 'historico') renderHistorico();
             });
+            unsubscribeListeners.push(unsubHistory);
 
-            // Listener para Proventos
-            onSnapshot(collection(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'proventos'), (snapshot) => {
+            // 3. Proventos
+            const unsubProventos = onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'proventos'), (snapshot) => {
                 window.proventos = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     window.proventos.push({ ...data, id: doc.id });
                 });
-
-                // Sort descending by date
                 window.proventos.sort((a, b) => new Date(b.date) - new Date(a.date));
-
                 if (window.renderProventos) window.renderProventos();
             });
+            unsubscribeListeners.push(unsubProventos);
 
-            // Listener para Configurações (Meta Anual e Caixa)
-            onSnapshot(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'goals'), (docSnap) => {
-                if (docSnap.exists()) {
-                    window.annualGoal = docSnap.data().annualGoal || 0;
-                    window.availableCash = docSnap.data().availableCash || 0;
-                    window.proventosGoal = docSnap.data().proventosGoal || 0; // Sync Proventos Goal
+            // 4. Settings (Goals, etc)
+            const settingsDocs = ['goals', 'rv_goals', 'rebalance_goals'];
+            settingsDocs.forEach(docName => {
+                const unsub = onSnapshot(doc(db, 'artifacts', appId, 'users', userId, 'settings', docName), (docSnap) => {
+                    if (!docSnap.exists()) return;
+                    const data = docSnap.data();
 
-                    // Atualiza o input se ele existir
-                    const caixaInput = document.getElementById('reb-caixa');
-                    if (caixaInput) caixaInput.value = window.availableCash;
-
-                    if (window.renderDashboard) window.renderDashboard();
-                    if (window.renderRebalanceamento && currentContext === 'rebalanceamento') window.renderRebalanceamento();
-                    if (window.renderProventos) window.renderProventos(); // Refresh Proventos UI
-                }
-            });
-
-            // Listener para Metas de Ativos RV
-            onSnapshot(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'rv_goals'), (docSnap) => {
-                if (docSnap.exists() && docSnap.data().goals) {
-                    window.rvAssetGoals = docSnap.data().goals;
-                    if (currentContext === 'renda-variavel') renderRendaVariavel(window.currentRvFilter);
-                }
-            });
-
-            // Listener para Metas de Rebalanceamento
-            onSnapshot(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'rebalance_goals'), (docSnap) => {
-                if (docSnap.exists() && docSnap.data().goals) {
-                    const loadedGoals = docSnap.data().goals;
-
-                    // --- MIGRATION LOGIC (Legacy to New Structure) ---
-
-                    // 1. Renda Variável: Pluralize keys
-                    if (loadedGoals['renda-variavel']) {
-                        if (loadedGoals['renda-variavel'].subs['Ação'] !== undefined) {
-                            if (loadedGoals['renda-variavel'].subs['Ações'] === undefined) {
-                                loadedGoals['renda-variavel'].subs['Ações'] = loadedGoals['renda-variavel'].subs['Ação'];
-                            }
-                            delete loadedGoals['renda-variavel'].subs['Ação'];
+                    if (docName === 'goals') {
+                        window.annualGoal = data.annualGoal || 0;
+                        window.availableCash = data.availableCash || 0;
+                        window.proventosGoal = data.proventosGoal || 0;
+                        const caixaInput = document.getElementById('reb-caixa');
+                        if (caixaInput) caixaInput.value = window.availableCash;
+                        if (window.renderDashboard) window.renderDashboard();
+                        if (window.renderProventos) window.renderProventos();
+                    } else if (docName === 'rv_goals') {
+                        if (data.goals) {
+                            window.rvAssetGoals = data.goals;
+                            if (currentContext === 'renda-variavel') renderRendaVariavel(window.currentRvFilter);
                         }
-                        if (loadedGoals['renda-variavel'].subs['FII'] !== undefined) {
-                            if (loadedGoals['renda-variavel'].subs['FIIs'] === undefined) {
-                                loadedGoals['renda-variavel'].subs['FIIs'] = loadedGoals['renda-variavel'].subs['FII'];
-                            }
-                            delete loadedGoals['renda-variavel'].subs['FII'];
+                    } else if (docName === 'rebalance_goals') {
+                        if (data.goals) {
+                            window.rebalanceGoals = data.goals;
+                            if (currentContext === 'rebalanceamento') renderRebalanceamento();
                         }
                     }
-
-                    // 2. Reserva: Check for new structure and cleanup legacy keys
-                    if (loadedGoals['reserva']) {
-                        // Rename legacy 'Reserva Privada' to 'Reserva' if it exists
-                        if (loadedGoals['reserva'].subs['Reserva Privada'] !== undefined) {
-                            if (loadedGoals['reserva'].subs['Reserva'] === undefined) {
-                                loadedGoals['reserva'].subs['Reserva'] = loadedGoals['reserva'].subs['Reserva Privada'];
-                            }
-                            delete loadedGoals['reserva'].subs['Reserva Privada'];
-                        }
-
-                        // Ensure 'Reserva' key exists (default to 10 if missing)
-                        if (loadedGoals['reserva'].subs['Reserva'] === undefined) {
-                            loadedGoals['reserva'].subs['Reserva'] = 10;
-                        }
-
-                        // Ensure 'Tesouro Selic' key exists
-                        if (loadedGoals['reserva'].subs['Tesouro Selic'] === undefined) {
-                            loadedGoals['reserva'].subs['Tesouro Selic'] = 10;
-                        }
-                    }
-
-                    // 3. Renda Fixa: New Categories and Rename
-                    if (loadedGoals['renda-fixa']) {
-                        // Migration: Inflação -> IPCA (if needed)
-                        // Só migra se o NOVO não existir (para não sobrescrever edições do usuário se o antigo ainda existir no BD)
-                        if (loadedGoals['renda-fixa'].subs['Renda Fixa Inflação'] !== undefined) {
-                            if (loadedGoals['renda-fixa'].subs['Renda Fixa IPCA'] === undefined) {
-                                loadedGoals['renda-fixa'].subs['Renda Fixa IPCA'] = loadedGoals['renda-fixa'].subs['Renda Fixa Inflação'];
-                            }
-                            delete loadedGoals['renda-fixa'].subs['Renda Fixa Inflação'];
-                        }
-                        if (loadedGoals['renda-fixa'].subs['Tesouro Inflação'] !== undefined) {
-                            if (loadedGoals['renda-fixa'].subs['Tesouro IPCA'] === undefined) {
-                                loadedGoals['renda-fixa'].subs['Tesouro IPCA'] = loadedGoals['renda-fixa'].subs['Tesouro Inflação'];
-                            }
-                            delete loadedGoals['renda-fixa'].subs['Tesouro Inflação'];
-                        }
-
-                        // Ensure precise keys exist
-                        const requiredKeys = ['Renda Fixa CDI', 'Renda Fixa IPCA', 'Tesouro IPCA'];
-                        requiredKeys.forEach(k => {
-                            if (loadedGoals['renda-fixa'].subs[k] === undefined) loadedGoals['renda-fixa'].subs[k] = 10;
-                        });
-
-                        // Delete any rogue keys (optional but effectively clean)
-                        Object.keys(loadedGoals['renda-fixa'].subs).forEach(k => {
-                            if (!requiredKeys.includes(k)) delete loadedGoals['renda-fixa'].subs[k];
-                        });
-                    }
-
-                    window.rebalanceGoals = loadedGoals;
-                    if (currentContext === 'rebalanceamento') renderRebalanceamento();
-                }
+                });
+                unsubscribeListeners.push(unsub);
             });
         }
 
-        // Funções Globais de Persistência (sobrescrevendo/conectando as antigas)
+        // --- Migration Logic ---
+        window.migrateAncientData = async () => {
+            if (!user) return alert("Faça login primeiro.");
+            if (!confirm("Isso importará os dados da versão antiga para sua conta. Deseja continuar?")) return;
 
-        window.firebaseSaveAsset = async (assetData) => {
-            if (!user) return;
             try {
-                // Alterado para SHARED_USER_ID
-                await addDoc(collection(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'assets'), assetData);
+                showSuccessMessage("Migrando dados...");
+                const batch = writeBatch(db);
+                let opCount = 0;
+
+                // 1. Assets
+                const oldAssets = await getDocs(collection(db, 'artifacts', appId, 'users', ANCIENT_ID, 'assets'));
+                oldAssets.forEach(docSnap => {
+                    const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'assets'));
+                    batch.set(ref, docSnap.data());
+                    opCount++;
+                });
+
+                // 2. History
+                const oldHistory = await getDocs(collection(db, 'artifacts', appId, 'users', ANCIENT_ID, 'history'));
+                oldHistory.forEach(docSnap => {
+                    const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'history'));
+                    batch.set(ref, docSnap.data());
+                    opCount++;
+                });
+
+                // 3. Proventos
+                const oldProventos = await getDocs(collection(db, 'artifacts', appId, 'users', ANCIENT_ID, 'proventos'));
+                oldProventos.forEach(docSnap => {
+                    const ref = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'proventos'));
+                    batch.set(ref, docSnap.data());
+                    opCount++;
+                });
+
+                // 4. Settings
+                const settingsDocs = ['goals', 'rv_goals', 'rebalance_goals'];
+                for (const docName of settingsDocs) {
+                    const snap = await getDoc(doc(db, 'artifacts', appId, 'users', ANCIENT_ID, 'settings', docName));
+                    if (snap.exists()) {
+                        const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', docName);
+                        batch.set(ref, snap.data());
+                        opCount++;
+                    }
+                }
+
+                if (opCount > 0) {
+                    await batch.commit();
+                    showSuccessMessage(`${opCount} registros migrados com sucesso!`);
+                } else {
+                    alert("Nenhum dado antigo encontrado para migrar.");
+                }
+
             } catch (e) {
-                console.error("Erro ao salvar:", e);
-                alert("Erro ao salvar no banco de dados.");
+                console.error("Migration Error:", e);
+                alert("Erro na migração: " + e.message);
             }
+        }
+
+        // --- Wrapper Functions (Updated to use auth.currentUser.uid) ---
+        window.firebaseSaveAsset = async (assetData) => {
+            if (!auth.currentUser) return;
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'assets'), assetData);
+            } catch (e) { console.error(e); alert("Erro ao salvar."); }
         };
 
         window.firebaseUpdateAsset = async (id, data) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                // Alterado para SHARED_USER_ID
-                await updateDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'assets', id), data);
+                await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'assets', id), data);
             } catch (e) { console.error(e); }
         };
 
         window.firebaseDeleteAsset = async (id) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                // Alterado para SHARED_USER_ID
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'assets', id));
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'assets', id));
             } catch (e) { console.error(e); }
         };
 
         window.firebaseSaveHistory = async (historyData) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                // Alterado para SHARED_USER_ID
-                await addDoc(collection(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'history'), historyData);
+                await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'history'), historyData);
             } catch (e) { console.error(e); }
-        }
+        };
 
         window.firebaseSaveGoal = async (value) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'goals'), { annualGoal: parseFloat(value) }, { merge: true });
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { annualGoal: parseFloat(value) }, { merge: true });
             } catch (e) { console.error(e); }
-        }
+        };
 
         window.firebaseSaveProventosGoal = async (value) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'goals'), { proventosGoal: parseFloat(value) }, { merge: true });
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { proventosGoal: parseFloat(value) }, { merge: true });
             } catch (e) { console.error(e); }
-        }
+        };
 
         window.firebaseSaveCash = async (value) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                // Atualiza também a variável local para feedback instantâneo
                 window.availableCash = parseFloat(value);
-                await setDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'goals'), { availableCash: parseFloat(value) }, { merge: true });
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { availableCash: parseFloat(value) }, { merge: true });
             } catch (e) { console.error(e); }
-        }
+        };
 
         window.firebaseSaveAssetGoals = async (goals) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'rv_goals'), { goals }, { merge: true });
-            } catch (e) { console.error("Erro saving asset goals:", e); }
-        }
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rv_goals'), { goals }, { merge: true });
+            } catch (e) { console.error(e); }
+        };
 
         window.firebaseSaveRebalanceGoals = async (rebGoals) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'settings', 'rebalance_goals'), { goals: rebGoals }, { merge: true });
-            } catch (e) { console.error("Erro saving reb goals:", e); }
-        }
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rebalance_goals'), { goals: rebGoals }, { merge: true });
+            } catch (e) { console.error(e); }
+        };
 
         window.firebaseSaveProvento = async (provData) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                // Save with specific ID or let Firestore generate?
-                // The current app logic generates an ID if new.
-                // If we want to keep using that ID as doc ID:
                 const id = provData.id;
-                await setDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'proventos', id), provData);
-            } catch (e) {
-                console.error("Erro ao salvar provento:", e);
-                alert("Erro ao salvar provento no servidor.");
-            }
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'proventos', id), provData);
+            } catch (e) { console.error(e); alert("Erro ao salvar."); }
         };
 
         window.firebaseUpdateProvento = async (id, data) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                await updateDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'proventos', id), data);
+                await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'proventos', id), data);
             } catch (e) { console.error(e); }
         };
 
         window.firebaseDeleteProvento = async (id) => {
-            if (!user) return;
+            if (!auth.currentUser) return;
             try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', SHARED_USER_ID, 'proventos', id));
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'proventos', id));
             } catch (e) { console.error(e); }
         };
 
@@ -5474,14 +5465,130 @@
                 </div>
             </div>
 
-            <div class="mt-6 pt-4 border-t border-slate-100 text-center">
-                <p class="text-[10px] text-slate-400">Preferências locais salvas no navegador</p>
+            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                <button onclick="window.migrateAncientData()" id="btn-migrate-data"
+                    class="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 dark:text-indigo-300 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Migrar Dados Antigos
+                </button>
+                <button onclick="window.handleLogout()"
+                    class="w-full py-3 bg-red-50 hover:bg-red-100 text-red-500 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-400 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair da Conta
+                </button>
+                <div class="text-center pt-2">
+                    <p class="text-[10px] text-slate-400">Preferências locais salvas no navegador</p>
+                </div>
             </div>
         </div>
+    </div> <!-- Close settings-modal here -->
+    <div id="login-overlay"
+        class="fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="text-center slide-in-bottom">
+            <div
+                class="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/20 mx-auto mb-8 overflow-hidden">
+                <img src="logo.png" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">Meus Investimentos</h1>
+            <p class="text-slate-400 mb-12">Seu portfólio inteligente em qualquer lugar.</p>
+
+            <button onclick="window.handleGoogleLogin()"
+                class="group relative bg-white hover:bg-slate-50 text-slate-800 font-bold py-3.5 px-8 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-blue-500/20 transition-all flex items-center gap-3 mx-auto transform active:scale-95">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
+                <span>Entrar com Google</span>
+                <div
+                    class="absolute inset-0 rounded-xl ring-2 ring-white/50 group-hover:ring-4 group-hover:ring-blue-500/30 transition-all">
+                </div>
+            </button>
+            <p class="text-xs text-slate-600 mt-8">Protegido pelo Google Firebase</p>
+        </div>
     </div>
+    <script>
+        // Separate function to be accessible globally
+        window.handleGoogleLogin = () => {
+            if (window.loginWithGoogle) window.loginWithGoogle();
+        }
+    </script>
 </body>
 
 <script>
+    // --- Restored UI Functions ---
+    window.navigateTo = (viewId) => {
+        document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+        const target = document.getElementById('view-' + viewId);
+        if (target) target.classList.remove('hidden');
+
+        document.querySelectorAll('.sidebar-link').forEach(el => {
+            el.classList.remove('active', 'bg-slate-50', 'text-primary');
+            el.classList.add('text-slate-500');
+        });
+        const activeLink = document.getElementById('nav-' + viewId);
+        if (activeLink) {
+            activeLink.classList.add('active', 'bg-slate-50', 'text-primary');
+            activeLink.classList.remove('text-slate-500');
+        }
+
+        // Update Context Global
+        if (typeof currentContext !== 'undefined') currentContext = viewId;
+
+        // Mobile Sidebar handling
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const sidebar = document.getElementById('main-sidebar');
+        if (sidebarOverlay) sidebarOverlay.classList.add('hidden');
+        if (sidebar) {
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('flex');
+        }
+
+        // Render Triggers
+        if (viewId === 'dashboard' && window.renderDashboard) renderDashboard();
+        if (viewId === 'renda-variavel' && window.renderRendaVariavel) renderRendaVariavel();
+        if (viewId === 'rebalanceamento' && window.renderRebalanceamento) renderRebalanceamento();
+        if (viewId === 'historico' && window.renderHistorico) renderHistorico();
+        if (viewId === 'proventos' && window.renderProventos) renderProventos();
+        if (viewId === 'reserva' && window.renderReserva) renderReserva();
+        if (viewId === 'renda-fixa' && window.renderRendaFixa) renderRendaFixa();
+        if (viewId === 'tesouro' && window.renderTesouro) renderTesouro();
+    };
+
+    window.toggleSidebar = () => {
+        const overlay = document.getElementById('sidebar-overlay');
+        const sidebar = document.getElementById('main-sidebar');
+        if (sidebar.classList.contains('hidden')) {
+            sidebar.classList.remove('hidden');
+            sidebar.classList.add('flex');
+            overlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('flex');
+            overlay.classList.add('hidden');
+        }
+    };
+
+    window.openSettingsModal = () => {
+        const modal = document.getElementById('settings-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                const content = document.getElementById('settings-modal-content');
+                if (content) content.classList.remove('opacity-0', 'scale-95');
+            }, 10);
+        }
+    };
+
+    window.closeSettingsModal = () => {
+        const modal = document.getElementById('settings-modal');
+        if (modal) {
+            const content = document.getElementById('settings-modal-content');
+            if (content) content.classList.add('opacity-0', 'scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    };
+
+    window.toggleValidationSetting = (checked) => {
+        window.enableValidation = checked;
+    };
+
     // --- Dark Mode Logic ---
     window.toggleDarkMode = (enabled) => {
         const html = document.documentElement;
@@ -5501,7 +5608,6 @@
     // Initialize Theme
     (function () {
         const theme = localStorage.getItem('theme');
-        // Default to light (false) if no theme is saved. Ignore system preference to enforce "off by default".
         const isDark = theme === 'dark';
 
         if (isDark) {
@@ -5510,8 +5616,6 @@
             document.documentElement.classList.remove('dark');
         }
 
-        // Sync Checkbox specifically
-        // Note: usage of setTimeout to ensure DOM is ready or accessing directly if script is at end
         const chk = document.getElementById('setting-dark-mode-check');
         if (chk) chk.checked = isDark;
     })();
