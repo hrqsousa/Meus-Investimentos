@@ -1622,7 +1622,7 @@
         window.firebaseSaveRebalanceGoals = async (rebGoals) => {
             if (!auth.currentUser) return;
             try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rebalance_goals'), { goals: rebGoals }, { merge: true });
+                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rebalance_goals'), { goals: rebGoals });
             } catch (e) { console.error(e); }
         };
 
