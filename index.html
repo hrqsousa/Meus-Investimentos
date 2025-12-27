@@ -2773,6 +2773,51 @@
             });
         }
 
+        function calculateGlobalMetrics() {
+            let totalValue = 0;
+            let totalInvested = 0;
+
+            // 1. Reserva
+            (window.mockReservaAssets || []).forEach(a => {
+                totalValue += (a.current || 0);
+                totalInvested += (a.invested || 0);
+            });
+
+            // 2. Renda Fixa
+            (window.mockRendaFixaAssets || []).forEach(a => {
+                totalValue += (a.current || 0);
+                totalInvested += (a.invested || 0);
+            });
+
+            // 3. Tesouro (Consolidado)
+            (window.mockTesouroAssets || []).forEach(a => {
+                totalValue += (a.current || 0);
+                totalInvested += (a.invested || 0);
+            });
+
+            // 4. Renda Variável
+            (window.mockRendaVariavelAssets || []).forEach(a => {
+                let current = a.quantity * a.currentPrice;
+                let invested = a.quantity * a.avgPrice;
+
+                if (a.currency === 'USD') {
+                    const rate = window.currentUsdRate || 5.0;
+                    current *= rate;
+                    invested *= rate; // Investido em BRL (convertido agora ou histórico?)
+                    // Nota: Idealmente seria custo histórico, mas para simplificar usamos rate atual ou custo já em BRL.
+                    // Assumindo que unitCost/avgPrice é na moeda original.
+                }
+
+                totalValue += current;
+                totalInvested += invested;
+            });
+
+            const profit = totalValue - totalInvested;
+            const profitPerc = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
+
+            return { totalValue, totalInvested, profit, profitPerc };
+        }
+
         function renderDashboard() {
             const metrics = calculateGlobalMetrics();
             document.getElementById('dash-total-balance').textContent = formatCurrency(metrics.totalValue);
