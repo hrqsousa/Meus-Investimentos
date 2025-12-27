@@ -1330,6 +1330,24 @@
         // Constants
         const ANCIENT_ID = "portfolio_principal"; // Legacy ID for migration
 
+        // --- Global State Initialization ---
+        window.mockReservaAssets = [];
+        window.mockRendaFixaAssets = [];
+        window.mockTesouroAssets = [];
+        window.mockRendaVariavelAssets = [];
+        window.proventos = [];
+        window.liquidationHistory = [];
+
+        // Default rebalance goals structure to prevent access errors before load
+        window.rebalanceGoals = {
+            'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
+            'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 30, 'Renda Fixa IPCA': 30, 'Tesouro IPCA': 40 } },
+            'renda-variavel': { target: 30, subs: { 'Ações': 50, 'FIIs': 25, 'Exterior': 20, 'Cripto': 5 } },
+            'aposentadoria': { target: 20, subs: { 'Tesouro Renda+': 100 } }
+        };
+
+        let currentContext = 'dashboard';
+
         // --- Auth Functions ---
         window.loginWithGoogle = async () => {
             try {
