@@ -2925,6 +2925,13 @@
                 totalInvested += invested;
             });
 
+            // ADDED: Include Available Cash (Caixa)
+            totalValue += (window.availableCash || 0);
+            // Cash is considered invested 1:1 (profit 0) or separate? 
+            // Usually Cash is part of Net Worth. 
+            // Does Cash have "invested"? Usually yes (principal).
+            totalInvested += (window.availableCash || 0);
+
             const profit = totalValue - totalInvested;
             const profitPerc = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
 
@@ -3453,6 +3460,10 @@
             const caixaInput = document.getElementById('reb-caixa');
             const caixaVal = caixaInput ? window.parseCurrencyValue(caixaInput.value) : 0;
             const totalWithCaixa = Object.values(totals).reduce((a, b) => a + b, 0) + caixaVal;
+
+            // ADDED: Update Total Patrimony Display
+            const totalPatEl = document.getElementById('reb-total-patrimony');
+            if (totalPatEl) totalPatEl.textContent = formatCurrency(totalWithCaixa);
 
             // Estado de Expansão (Preservar)
             const expandedState = {};
@@ -4292,22 +4303,13 @@
 
 
 
-            // Guest Mode / Fallback Persistence
-            if (!window.currentUser && context !== 'renda-variavel') { // RV already has some mock handling, but let's unify
-                if (context === 'reserva') {
-                    window.mockReservaAssets.push(newItem);
-                    if (window.renderReserva) window.renderReserva();
-                } else if (context === 'renda-fixa') {
-                    window.mockRendaFixaAssets.push(newItem);
-                    if (window.renderRendaFixa) window.renderRendaFixa();
-                } else if (context === 'tesouro') {
-                    window.mockTesouroAssets.push(newItem);
-                    if (window.renderTesouro) window.renderTesouro();
-                }
-                closeModal();
-                showSuccessMessage("Salvo localmente (Visitante)!");
-                return;
+            // Guest Mode / Fallback Persistence - REMOVED TO PREVENT DUPLICATION
+            // Logic is now handled inside firebaseSaveAsset/firebaseUpdateAsset wrappers
+            /*
+            if (!window.currentUser && context !== 'renda-variavel') {
+                // ...
             }
+            */
 
             if (editId) {
                 // Modo Edição
