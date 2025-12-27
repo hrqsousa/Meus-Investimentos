@@ -3030,7 +3030,14 @@
                 if (!el.classList.contains('hidden')) expandedState[el.id.replace('sub-', '')] = true;
             });
 
-            container.innerHTML = '';
+            container.innerHTML = `
+                <div class="flex justify-end mb-4">
+                     <button onclick="window.firebaseSaveRebalanceGoals(window.rebalanceGoals); showSuccessMessage('Metas salvas com sucesso!');" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar Definições
+                     </button>
+                </div>
+            `;
 
             const categories = [
                 { id: 'reserva', name: 'Reserva de Emergência', icon: 'fa-shield-heart', color: 'text-emerald-600', bg: 'bg-emerald-100' },
