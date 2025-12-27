@@ -2392,6 +2392,7 @@
         };
 
         function renderRendaVariavel(filter = window.currentRvFilter || 'all') {
+            const currentUsdRate = window.currentUsdRate || 5.0;
             window.currentRvFilter = filter;
             const tbody = document.getElementById('rv-table-body'); if (!tbody) return;
 
@@ -2947,7 +2948,8 @@
                     // Coluna "Custo / Inv."
                     let costDisplay;
                     if (a.isVariable) {
-                        costDisplay = formatCurrency(a.unitCost, a.currency);
+                        const rate = window.currentUsdRate || 5.0;
+                        costDisplay = formatCurrency(a.currency === 'USD' ? a.unitCost / rate : a.unitCost, a.currency);
                     } else {
                         costDisplay = formatCurrency(a.investedDisplay, 'BRL');
                     }
@@ -2974,7 +2976,17 @@
                 });
             }
 
-            let totals = { 'Reserva': 0, 'Renda Fixa': 0, 'Renda Variável': 0, 'Tesouro': 0, 'Caixa': 0 }; window.mockReservaAssets.forEach(a => totals['Reserva'] += a.current); window.mockRendaFixaAssets.forEach(a => totals['Renda Fixa'] += a.current); window.mockTesouroAssets.forEach(a => totals['Tesouro'] += a.current); window.mockRendaVariavelAssets.forEach(a => { let v = a.quantity * a.currentPrice; if (a.currency === 'USD') v *= currentUsdRate; totals['Renda Variável'] += v; }); totals['Caixa'] = window.availableCash || 0; renderChart(totals);
+            let totals = { 'Reserva': 0, 'Renda Fixa': 0, 'Renda Variável': 0, 'Tesouro': 0, 'Caixa': 0 };
+            window.mockReservaAssets.forEach(a => totals['Reserva'] += a.current);
+            window.mockRendaFixaAssets.forEach(a => totals['Renda Fixa'] += a.current);
+            window.mockTesouroAssets.forEach(a => totals['Tesouro'] += a.current);
+            window.mockRendaVariavelAssets.forEach(a => {
+                let v = a.quantity * a.currentPrice;
+                if (a.currency === 'USD') v *= (window.currentUsdRate || 5.0);
+                totals['Renda Variável'] += v;
+            });
+            totals['Caixa'] = window.availableCash || 0;
+            renderChart(totals);
         }
 
         function renderGoalCard(currentValue) {
