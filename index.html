@@ -213,27 +213,29 @@
                     class="fa-solid fa-landmark text-slate-400 group-hover:text-primary w-5 text-center transition-colors"></i><span>Tesouro
                     Direto</span></a>
         </nav>
-        <div class="p-6 border-t border-slate-100">
+        <div class="p-6 border-t border-slate-100 dark:border-slate-700">
             <!-- Settings Button -->
             <button onclick="openSettingsModal()"
-                class="w-full mb-3 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-95 group">
+                class="w-full mb-3 bg-white dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-95 group">
                 <i class="fa-solid fa-gear text-slate-400 group-hover:text-primary"></i> <span>Configurações</span>
             </button>
             <!-- Export Button -->
             <button onclick="exportToPDF()"
-                class="w-full mb-4 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-95 group">
+                class="w-full mb-4 bg-white dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 transform active:scale-95 group">
                 <i class="fa-solid fa-file-pdf text-red-500 group-hover:text-red-600"></i> <span>Exportar
                     Relatório</span>
             </button>
 
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <div
+                class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                 <div id="sidebar-user-avatar"
                     class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shadow-md overflow-hidden">
                     <i class="fa-solid fa-user"></i>
                 </div>
                 <div class="flex-1 overflow-hidden">
-                    <p id="sidebar-user-name" class="text-sm font-bold text-slate-700 truncate">Visitante</p>
-                    <p id="sidebar-user-email" class="text-xs text-slate-500 truncate">Sem email</p>
+                    <p id="sidebar-user-name" class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">
+                        Visitante</p>
+                    <p id="sidebar-user-email" class="text-xs text-slate-500 dark:text-slate-400 truncate">Sem email</p>
                 </div>
                 <button onclick="window.openLogoutModal()"
                     class="text-slate-400 hover:text-red-500 transition-colors cursor-pointer w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50"
@@ -247,16 +249,17 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-1 flex flex-col h-full relative overflow-y-auto w-full">
-        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200">
+        <header
+            class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800">
             <div class="flex items-center justify-between px-8 py-5">
                 <div class="flex items-center gap-4 md:hidden">
-                    <button class="text-slate-500 hover:text-primary" onclick="toggleSidebar()"><i
-                            class="fa-solid fa-bars text-xl"></i></button>
+                    <button class="text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-white"
+                        onclick="toggleSidebar()"><i class="fa-solid fa-bars text-xl"></i></button>
                     <span class="font-bold text-lg text-primary">Meus Investimentos</span>
                 </div>
                 <div class="hidden md:block">
-                    <h2 class="text-2xl font-bold text-slate-800" id="page-title">Visão Geral</h2>
-                    <p class="text-sm text-slate-500" id="page-subtitle">Bem-vindo de volta.</p>
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="page-title">Visão Geral</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400" id="page-subtitle">Bem-vindo de volta.</p>
                 </div>
                 <div class="flex items-center gap-4">
                     <button onclick="openModal()"
@@ -271,23 +274,27 @@
             <!-- DASHBOARD -->
             <div id="view-dashboard" class="space-y-8 fade-in">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 relative group">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative group">
                         <div
-                            class="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110">
+                            class="absolute right-0 top-0 w-32 h-32 bg-primary/5 dark:bg-slate-700/30 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110">
                         </div>
                         <div class="relative z-10">
-                            <p class="text-sm font-medium text-slate-500 mb-1">Patrimônio Total</p>
-                            <h3 class="text-3xl font-bold text-slate-800" id="dash-total-balance">Carregando...</h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Patrimônio Total</p>
+                            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="dash-total-balance">
+                                Carregando...</h3>
                         </div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 relative group">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative group">
                         <div
-                            class="absolute right-0 top-0 w-32 h-32 bg-emerald-50 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110">
+                            class="absolute right-0 top-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/10 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110">
                         </div>
                         <div class="relative z-10">
-                            <p class="text-sm font-medium text-slate-500 mb-1">Lucro Acumulado</p>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Lucro Acumulado</p>
                             <div class="flex flex-col items-start gap-1">
-                                <h3 class="text-3xl font-bold text-slate-800" id="dash-total-profit">R$ 0,00</h3><span
+                                <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100"
+                                    id="dash-total-profit">R$ 0,00</h3><span
                                     class="text-sm font-bold px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-700"
                                     id="dash-total-profit-perc">+0,00%</span>
                             </div>
@@ -325,26 +332,30 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    <div class="xl:col-span-1 bg-white p-6 rounded-2xl card-shadow border border-slate-100 h-full">
-                        <h3 class="font-bold text-slate-800 mb-6">Alocação</h3>
+                    <div
+                        class="xl:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 h-full">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-6">Alocação</h3>
                         <div class="relative h-64 w-full"><canvas id="allocationChart"></canvas></div>
                         <div class="mt-6" id="chart-legend"></div>
                     </div>
-                    <div class="xl:col-span-2 bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
-                        <div class="p-6 border-b border-slate-100">
-                            <h3 class="font-bold text-slate-800">Top 10 - Maior Rentabilidade</h3>
+                    <div
+                        class="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 dark:border-slate-700">
+                            <h3 class="font-bold text-slate-800 dark:text-slate-100">Top 10 - Maior Rentabilidade</h3>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                    <tr
+                                        class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                         <th class="px-6 py-4 w-10 text-center">#</th>
                                         <th class="px-6 py-4">Ativo</th>
                                         <th class="px-6 py-4">Cat.</th>
                                         <th class="px-6 py-4 text-right">Rent.</th>
                                     </tr>
                                 </thead>
-                                <tbody id="dash-assets-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                                <tbody id="dash-assets-body"
+                                    class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                                 </tbody>
                             </table>
                         </div>
@@ -352,37 +363,41 @@
                 </div>
 
                 <!-- Top 5 Dividend Payers -->
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden mt-8">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden mt-8">
                     <div
-                        class="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <h3 class="font-bold text-slate-800" id="top-dividend-card-title">Top 7 - Maiores Pagadores (12
+                        class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100" id="top-dividend-card-title">Top 7 -
+                            Maiores Pagadores (12
                             Meses)</h3>
-                        <div class="flex bg-slate-100 p-1 rounded-lg">
+                        <div class="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
                             <button onclick="renderTopDividendPayers('all')"
-                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-white text-slate-800 shadow-sm"
+                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
                                 id="btn-top-div-all">Todos</button>
                             <button onclick="renderTopDividendPayers('Ação')"
-                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-500 hover:text-slate-700"
+                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                 id="btn-top-div-acao">Ações</button>
                             <button onclick="renderTopDividendPayers('FII')"
-                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-500 hover:text-slate-700"
+                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                 id="btn-top-div-fii">FIIs</button>
                             <button onclick="renderTopDividendPayers('Exterior')"
-                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-500 hover:text-slate-700"
+                                class="flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                 id="btn-top-div-exterior">Ext</button>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 w-10 text-center">#</th>
                                     <th class="px-6 py-4">Ativo</th>
                                     <th class="px-6 py-4">Cat.</th>
                                     <th class="px-6 py-4 text-right">Total (12m)</th>
                                 </tr>
                             </thead>
-                            <tbody id="top-dividend-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="top-dividend-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                             </tbody>
                         </table>
                     </div>
@@ -393,38 +408,43 @@
             <!-- RESERVA -->
             <div id="view-reserva" class="hidden space-y-8 fade-in">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Total</p>
-                            <h3 class="text-3xl font-bold text-slate-800" id="reserva-total">R$ 0,00</h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total</p>
+                            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="reserva-total">R$ 0,00
+                            </h3>
                         </div>
                         <div class="text-primary text-2xl"><i class="fa-solid fa-shield-halved"></i></div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Rentabilidade</p>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Rentabilidade</p>
                             <h3 class="text-3xl font-bold text-emerald-600" id="reserva-profit">R$ 0,00</h3><span
-                                class="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 rounded"
+                                class="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 rounded"
                                 id="reserva-profit-perc">+0%</span>
                         </div>
                         <div class="text-emerald-600 text-2xl"><i class="fa-solid fa-chart-line"></i></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span
                                 class="w-1 h-6 bg-primary rounded-full"></span>Títulos da Reserva</h3>
                         <div class="flex gap-2"><button onclick="openUpdateBalancesModal()"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"><i
                                     class="fa-solid fa-rotate"></i> Atualizar Saldos</button><button
                                 onclick="navigateTo('historico')"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"><i
                                     class="fa-solid fa-clock-rotate-left"></i> Histórico</button></div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 pl-6">Tipo</th>
                                     <th class="px-6 py-4">Emissor</th>
                                     <th class="px-6 py-4">Vencimento</th>
@@ -437,7 +457,8 @@
                                     <th class="px-6 py-4 text-center pr-6">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="reserva-table-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="reserva-table-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                             </tbody>
                         </table>
                     </div>
@@ -447,49 +468,56 @@
             <!-- RENDA FIXA -->
             <div id="view-renda-fixa" class="hidden space-y-8 fade-in">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Total</p>
-                            <h3 class="text-3xl font-bold text-slate-800" id="renda-fixa-total">R$ 0,00</h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total</p>
+                            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="renda-fixa-total">R$
+                                0,00</h3>
                         </div>
                         <div class="text-purple-600 text-2xl"><i class="fa-solid fa-percent"></i></div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Rentabilidade</p>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Rentabilidade</p>
                             <h3 class="text-3xl font-bold text-emerald-600" id="renda-fixa-profit">R$ 0,00</h3><span
-                                class="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 rounded"
+                                class="text-sm font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 rounded"
                                 id="renda-fixa-profit-perc">+0%</span>
                         </div>
                         <div class="text-emerald-600 text-2xl"><i class="fa-solid fa-chart-line"></i></div>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100">
-                        <h3 class="font-bold text-slate-800 mb-4">Bond Ladder</h3>
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-4">Bond Ladder</h3>
                         <div class="relative h-40 w-full"><canvas id="bondLadderChart"></canvas></div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100">
-                        <h3 class="font-bold text-slate-800 mb-4">Indexadores</h3>
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-4">Indexadores</h3>
                         <div class="relative h-40 w-full flex justify-center"><canvas id="indexerChart"></canvas>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span
                                 class="w-1 h-6 bg-primary rounded-full"></span>Títulos</h3>
                         <div class="flex gap-2"><button onclick="openUpdateBalancesModal()"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg transition-colors"><i
                                     class="fa-solid fa-rotate"></i> Atualizar Saldos</button><button
                                 onclick="navigateTo('historico')"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg transition-colors"><i
                                     class="fa-solid fa-clock-rotate-left"></i> Histórico</button></div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 pl-6">Tipo</th>
                                     <th class="px-6 py-4">Emissor</th>
                                     <th class="px-6 py-4">Vencimento</th>
@@ -502,7 +530,8 @@
                                     <th class="px-6 py-4 text-center pr-6">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="renda-fixa-table-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="renda-fixa-table-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                             </tbody>
                         </table>
                     </div>
@@ -512,60 +541,66 @@
             <!-- RENDA VARIÁVEL -->
             <div id="view-renda-variavel" class="hidden space-y-8 fade-in">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Total</p>
-                            <h3 class="text-3xl font-bold text-slate-800" id="rv-total">R$ 0,00</h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total</p>
+                            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="rv-total">R$ 0,00</h3>
                         </div>
                         <div class="text-indigo-600 text-2xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Rentabilidade</p>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Rentabilidade</p>
                             <h3 class="text-3xl font-bold text-emerald-600" id="rv-profit">R$ 0,00</h3><span
                                 class="text-sm text-emerald-600" id="rv-profit-perc">+0%</span>
                         </div>
                         <div class="text-emerald-600 text-2xl"><i class="fa-solid fa-chart-line"></i></div>
                     </div>
                     <!-- New Card: Média Proventos -->
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Média Proventos (12m)</p>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Média Proventos (12m)
+                            </p>
                             <h3 class="text-3xl font-bold text-amber-600" id="rv-avg-prov">R$ 0,00</h3>
                         </div>
                         <div class="text-amber-500 text-2xl"><i class="fa-solid fa-coins"></i></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div
-                        class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                        class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span
                                 class="w-1 h-6 bg-primary rounded-full"></span>Meus Ativos</h3>
                         <div class="flex gap-2 overflow-x-auto"><button onclick="renderRendaVariavel('all')"
-                                class="rv-filter-btn bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold">Todos</button><button
+                                class="rv-filter-btn bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">Todos</button><button
                                 onclick="renderRendaVariavel('Ação')"
-                                class="rv-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">Ações</button><button
+                                class="rv-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Ações</button><button
                                 onclick="renderRendaVariavel('FII')"
-                                class="rv-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">FIIs</button><button
+                                class="rv-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">FIIs</button><button
                                 onclick="renderRendaVariavel('Exterior')"
-                                class="rv-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">Exterior</button><button
+                                class="rv-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Exterior</button><button
                                 onclick="renderRendaVariavel('Cripto')"
-                                class="rv-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">Cripto</button>
+                                class="rv-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cripto</button>
                         </div>
                         <div class="flex gap-2"><button onclick="navigateTo('proventos')"
-                                class="text-sm font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors border border-emerald-200 shadow-sm"><i
+                                class="text-sm font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors border border-emerald-200 dark:border-emerald-800/50 shadow-sm"><i
                                     class="fa-solid fa-hand-holding-dollar"></i> Proventos</button><button
                                 onclick="openUpdateBalancesModal()"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"><i
                                     class="fa-solid fa-rotate"></i> Cotações</button><button
                                 onclick="navigateTo('historico')"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"><i
                                     class="fa-solid fa-clock-rotate-left"></i> Histórico</button></div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 pl-6">Ativo</th>
                                     <th class="px-6 py-4 text-center">Meta %</th>
                                     <th class="px-6 py-4 text-right">Qtd</th>
@@ -576,7 +611,8 @@
                                     <th class="px-6 py-4 text-center pr-6">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="rv-table-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="rv-table-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                             </tbody>
                         </table>
                     </div>
@@ -586,50 +622,55 @@
             <!-- TESOURO -->
             <div id="view-tesouro" class="hidden space-y-8 fade-in">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Total</p>
-                            <h3 class="text-3xl font-bold text-slate-800" id="tesouro-total">R$ 0,00</h3>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total</p>
+                            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100" id="tesouro-total">R$ 0,00
+                            </h3>
                         </div>
                         <div class="text-yellow-600 text-2xl"><i class="fa-solid fa-landmark"></i></div>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl card-shadow border border-slate-100 flex justify-between">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-6 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 flex justify-between">
                         <div>
-                            <p class="text-sm font-medium text-slate-500 mb-1">Rentabilidade</p>
+                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Rentabilidade</p>
                             <h3 class="text-3xl font-bold text-emerald-600" id="tesouro-profit">R$ 0,00</h3><span
                                 class="text-sm text-emerald-600" id="tesouro-profit-perc">+0%</span>
                         </div>
                         <div class="text-emerald-600 text-2xl"><i class="fa-solid fa-chart-line"></i></div>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div
-                        class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                        class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span
                                 class="w-1 h-6 bg-primary rounded-full"></span>Títulos do Tesouro</h3>
                         <div class="flex gap-2 overflow-x-auto">
                             <button onclick="renderTesouro('all')"
-                                class="tesouro-filter-btn bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold">Todos</button>
+                                class="tesouro-filter-btn bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md">Todos</button>
                             <button onclick="renderTesouro('Selic')"
-                                class="tesouro-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">Selic</button>
+                                class="tesouro-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Selic</button>
                             <button onclick="renderTesouro('IPCA')"
-                                class="tesouro-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">IPCA+</button>
+                                class="tesouro-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">IPCA+</button>
                             <button onclick="renderTesouro('Renda+')"
-                                class="tesouro-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">Renda+</button>
+                                class="tesouro-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Renda+</button>
                             <button onclick="renderTesouro('Prefixado')"
-                                class="tesouro-filter-btn bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium">Pré-fixado</button>
+                                class="tesouro-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Pré-fixado</button>
                         </div>
                         <div class="flex gap-2"><button onclick="openUpdateBalancesModal()"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"><i
                                     class="fa-solid fa-rotate"></i> Atualizar Saldos</button><button
                                 onclick="navigateTo('historico')"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-3 py-2 rounded-lg flex items-center gap-2"><i
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"><i
                                     class="fa-solid fa-clock-rotate-left"></i> Histórico</button></div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 pl-6">Título</th>
                                     <th class="px-6 py-4 text-center">Qtd</th>
                                     <th class="px-6 py-4">Vencimento</th>
@@ -640,7 +681,8 @@
                                     <th class="px-6 py-4 text-center pr-6">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="tesouro-table-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="tesouro-table-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                             </tbody>
                         </table>
                     </div>
@@ -651,19 +693,19 @@
             <div id="view-historico" class="hidden space-y-8 fade-in">
                 <!-- Toolbar: Busca e Filtros -->
                 <div
-                    class="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl card-shadow border border-slate-100">
+                    class="flex flex-col md:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700">
                     <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
                         <button onclick="renderHistorico('all')"
-                            class="hist-filter-btn bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap">Todos</button>
+                            class="hist-filter-btn bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap shadow-md">Todos</button>
                         <button onclick="renderHistorico('reserva')"
-                            class="hist-filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Reserva</button>
+                            class="hist-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Reserva</button>
                         <button onclick="renderHistorico('renda-fixa')"
-                            class="hist-filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Renda
+                            class="hist-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Renda
                             Fixa</button>
                         <button onclick="renderHistorico('tesouro')"
-                            class="hist-filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Tesouro</button>
+                            class="hist-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Tesouro</button>
                         <button onclick="renderHistorico('renda-variavel')"
-                            class="hist-filter-btn bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Renda
+                            class="hist-filter-btn bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">Renda
                             Variável</button>
                     </div>
                     <div class="flex gap-3 w-full md:w-auto">
@@ -672,19 +714,21 @@
                             <input type="text" id="hist-search"
                                 oninput="renderHistorico(window.currentHistFilter, this.value)"
                                 placeholder="Buscar ativo..."
-                                class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-primary outline-none text-sm transition-colors">
+                                class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary dark:focus:border-primary outline-none text-sm transition-colors">
                         </div>
                         <button id="btn-voltar-historico" onclick="navigateTo('reserva')"
-                            class="bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                            class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                             <i class="fa-solid fa-arrow-left"></i> Voltar
                         </button>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 pl-6">Data Liq.</th>
                                     <th class="px-6 py-4">Tipo</th>
                                     <th class="px-6 py-4">Emissor</th>
@@ -694,7 +738,8 @@
                                     <th class="px-6 py-4 text-center">Tipo Liq.</th>
                                 </tr>
                             </thead>
-                            <tbody id="historico-table-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="historico-table-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                             </tbody>
                         </table>
                     </div>
@@ -708,73 +753,101 @@
                 <!-- Cards de Resumo -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                     <!-- Total -->
-                    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 relative overflow-hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-5 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative overflow-hidden">
                         <div class="relative z-10">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Recebido
+                            <p
+                                class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                Total Recebido
                             </p>
-                            <h3 class="text-2xl font-bold text-slate-800" id="prov-total">R$ 0,00</h3>
+                            <h3 class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="prov-total">R$ 0,00
+                            </h3>
                         </div>
-                        <div class="absolute right-4 top-4 text-slate-100 text-6xl -z-0 transform rotate-12"><i
-                                class="fa-solid fa-landmark"></i></div>
+                        <div
+                            class="absolute right-4 top-4 text-slate-100 dark:text-slate-700 text-6xl -z-0 transform rotate-12">
+                            <i class="fa-solid fa-landmark"></i>
+                        </div>
                     </div>
                     <!-- 12 Meses -->
-                    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 relative overflow-hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-5 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative overflow-hidden">
                         <div class="relative z-10">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Últimos 12
+                            <p
+                                class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                Últimos 12
                                 Meses
                             </p>
                             <h3 class="text-2xl font-bold text-indigo-600" id="prov-12m">R$ 0,00</h3>
                         </div>
-                        <div class="absolute right-4 top-4 text-indigo-50 text-6xl -z-0 transform rotate-12"><i
-                                class="fa-regular fa-calendar-check"></i></div>
+                        <div
+                            class="absolute right-4 top-4 text-indigo-50 dark:text-indigo-900/20 text-6xl -z-0 transform rotate-12">
+                            <i class="fa-regular fa-calendar-check"></i>
+                        </div>
                     </div>
                     <!-- Este Ano -->
-                    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 relative overflow-hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-5 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative overflow-hidden">
                         <div class="relative z-10">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Este Ano (YTD)
+                            <p
+                                class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                Este Ano (YTD)
                             </p>
                             <h3 class="text-2xl font-bold text-emerald-600" id="prov-ytd">R$ 0,00</h3>
                         </div>
-                        <div class="absolute right-4 top-4 text-emerald-50 text-6xl -z-0 transform rotate-12"><i
-                                class="fa-solid fa-calendar-days"></i></div>
+                        <div
+                            class="absolute right-4 top-4 text-emerald-50 dark:text-emerald-900/20 text-6xl -z-0 transform rotate-12">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </div>
                     </div>
                     <!-- Mês Passado -->
-                    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 relative overflow-hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-5 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative overflow-hidden">
                         <div class="relative z-10">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mês Passado
+                            <p
+                                class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                Mês Passado
                             </p>
-                            <h3 class="text-2xl font-bold text-slate-600" id="prov-last-month">R$ 0,00</h3>
+                            <h3 class="text-2xl font-bold text-slate-600 dark:text-slate-300" id="prov-last-month">R$
+                                0,00</h3>
                         </div>
-                        <div class="absolute right-4 top-4 text-slate-50 text-6xl -z-0 transform rotate-12"><i
-                                class="fa-solid fa-backward"></i></div>
+                        <div
+                            class="absolute right-4 top-4 text-slate-50 dark:text-slate-700 text-6xl -z-0 transform rotate-12">
+                            <i class="fa-solid fa-backward"></i>
+                        </div>
                     </div>
                     <!-- Este Mês -->
-                    <div class="bg-white p-5 rounded-2xl card-shadow border border-slate-100 relative overflow-hidden">
+                    <div
+                        class="bg-white dark:bg-slate-800 p-5 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 relative overflow-hidden">
                         <div class="relative z-10">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Este Mês</p>
+                            <p
+                                class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                                Este Mês</p>
                             <div class="flex items-end gap-2">
                                 <h3 class="text-2xl font-bold text-orange-600" id="prov-this-month">R$ 0,00</h3>
                                 <span id="prov-month-change"
-                                    class="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 mb-1">...</span>
+                                    class="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 mb-1">...</span>
                             </div>
                         </div>
-                        <div class="absolute right-4 top-4 text-orange-50 text-6xl -z-0 transform rotate-12"><i
-                                class="fa-regular fa-calendar-plus"></i></div>
+                        <div
+                            class="absolute right-4 top-4 text-orange-50 dark:text-orange-900/20 text-6xl -z-0 transform rotate-12">
+                            <i class="fa-regular fa-calendar-plus"></i>
+                        </div>
                     </div>
                 </div>
 
 
 
                 <!-- Charts Section -->
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 p-6 mb-8 mt-6">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 p-6 mb-8 mt-6">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <i class="fa-solid fa-chart-simple text-blue-600"></i> Evolução e Composição
                         </h3>
                         <div class="flex flex-wrap gap-2">
                             <!-- Grouping Control -->
                             <select id="chart-grouping" onchange="window.renderProventosCharts()"
-                                class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                                class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none">
                                 <option value="monthly" selected>Mensal</option>
                                 <option value="quarterly">Trimestral</option>
                                 <option value="semiannual">Semestral</option>
@@ -782,7 +855,7 @@
                             </select>
                             <!-- Range Control -->
                             <select id="chart-range" onchange="window.renderProventosCharts()"
-                                class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                                class="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none">
                                 <option value="6m">6 Meses</option>
                                 <option value="1y" selected>1 Ano</option>
                                 <option value="2y">2 Anos</option>
@@ -798,8 +871,9 @@
                     </div>
 
                     <!-- Composition Chart Section (Horizontal Bar) -->
-                    <div class="border-t border-slate-100 pt-6">
-                        <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wider">Proventos por
+                    <div class="border-t border-slate-100 dark:border-slate-700 pt-6">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-4 text-sm uppercase tracking-wider">
+                            Proventos por
                             Categoria
                         </h3>
                         <div class="flex flex-col gap-2">
@@ -809,7 +883,8 @@
                                 <!-- Populated by JS -->
                             </div>
                             <!-- Horizontal Chart -->
-                            <div class="h-8 w-full rounded-full overflow-hidden relative bg-slate-100">
+                            <div
+                                class="h-8 w-full rounded-full overflow-hidden relative bg-slate-100 dark:bg-slate-700">
                                 <canvas id="proventos-composition-chart"></canvas>
                             </div>
                         </div>
@@ -817,31 +892,32 @@
                 </div>
 
                 <!-- Tabela e Ações -->
-                <div class="bg-white rounded-2xl card-shadow border border-slate-100 overflow-hidden">
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl card-shadow border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div
-                        class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                        class="p-6 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex flex-col gap-4 w-full md:w-auto">
-                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><span
+                            <h3 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span
                                     class="w-1 h-6 bg-emerald-500 rounded-full"></span>Histórico de Proventos</h3>
                             <!-- Filtros -->
                             <div class="flex gap-2 overflow-x-auto pb-1 md:pb-0">
                                 <button onclick="renderProventos('all')"
                                     class="prov-filter-btn bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ring-2 ring-emerald-600 ring-offset-1">Todos</button>
                                 <button onclick="renderProventos('Ação')"
-                                    class="prov-filter-btn bg-slate-50 text-slate-500 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Ações</button>
+                                    class="prov-filter-btn bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Ações</button>
                                 <button onclick="renderProventos('FII')"
-                                    class="prov-filter-btn bg-slate-50 text-slate-500 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">FIIs</button>
+                                    class="prov-filter-btn bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">FIIs</button>
                                 <button onclick="renderProventos('Exterior')"
-                                    class="prov-filter-btn bg-slate-50 text-slate-500 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Exterior</button>
+                                    class="prov-filter-btn bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">Exterior</button>
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="navigateTo('renda-variavel')"
-                                class="text-sm font-medium text-slate-500 hover:text-primary bg-slate-50 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary-light bg-slate-50 dark:bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
                                 <i class="fa-solid fa-arrow-left"></i> Voltar
                             </button>
                             <button onclick="resetProventosForm(); openProventosModal()"
-                                class="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm shadow-emerald-200">
+                                class="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm shadow-emerald-200 dark:shadow-none">
                                 <i class="fa-solid fa-plus"></i> Inserir Proventos
                             </button>
                         </div>
@@ -849,7 +925,8 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50/50 text-slate-400 text-xs uppercase">
+                                <tr
+                                    class="bg-slate-50/50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-300 text-xs uppercase">
                                     <th class="px-6 py-4 pl-6">Data</th>
                                     <th class="px-6 py-4">Ativo</th>
                                     <th class="px-6 py-4">Categoria</th>
@@ -858,7 +935,8 @@
                                     <th class="px-6 py-4 text-center pr-6">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody id="proventos-table-body" class="text-sm text-slate-600 divide-y divide-slate-50">
+                            <tbody id="proventos-table-body"
+                                class="text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700">
                                 <!-- Preenchido via JS -->
                             </tbody>
                         </table>
@@ -869,14 +947,15 @@
                     </div>
                     <!-- Pagination Controls -->
                     <div id="proventos-pagination"
-                        class="hidden flex justify-center items-center gap-4 py-6 border-t border-slate-50">
+                        class="hidden flex justify-center items-center gap-4 py-6 border-t border-slate-50 dark:border-slate-700">
                         <button id="prov-prev-page"
-                            class="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                            class="w-10 h-10 rounded-lg flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                             <i class="fa-solid fa-chevron-left"></i>
                         </button>
-                        <span id="prov-page-info" class="text-sm font-bold text-slate-600">Página 1 de 1</span>
+                        <span id="prov-page-info" class="text-sm font-bold text-slate-600 dark:text-slate-300">Página 1
+                            de 1</span>
                         <button id="prov-next-page"
-                            class="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                            class="w-10 h-10 rounded-lg flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
                             <i class="fa-solid fa-chevron-right"></i>
                         </button>
                     </div>
@@ -6174,7 +6253,7 @@
     <div id="settings-modal"
         class="fixed inset-0 bg-slate-900/60 z-[90] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
         <div id="settings-modal-content"
-            class="bg-white rounded-2xl shadow-2xl w-96 transform transition-all opacity-0 scale-95 p-6">
+            class="bg-white dark:bg-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl w-96 transform transition-all opacity-0 scale-95 p-6">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-lg text-slate-800">Configurações</h3>
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600"><i
@@ -6420,6 +6499,9 @@
         if (window.renderBondLadder) window.renderBondLadder();
         if (window.renderIndexerChart) window.renderIndexerChart();
         if (window.renderProventosCharts) window.renderProventosCharts();
+
+        // Update Dashboard (Allocation Chart) if active
+        if (window.renderDashboard && window.currentContext === 'dashboard') window.renderDashboard();
     };
 
     // Initialize Theme
