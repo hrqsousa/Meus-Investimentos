@@ -1212,7 +1212,7 @@
             <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900 rounded-b-3xl"
                 id="modal-actions"><button onclick="closeModal()"
                     class="px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-semibold transition-colors">Cancelar</button><button
-                    onclick="saveNewAsset()"
+                    onclick="console.log('>>> CLICKED SAVE BUTTON'); saveNewAsset()"
                     class="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg flex items-center gap-2"><i
                         class="fa-solid fa-check"></i> <span id="modal-save-btn-text">Salvar</span></button></div>
         </div>
@@ -1274,26 +1274,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO -->
-    <div id="delete-modal"
-        class="fixed inset-0 bg-slate-900/60 z-[80] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-sm mx-4 transform transition-all scale-95 opacity-0 p-6 text-center"
-            id="delete-modal-content">
-            <div
-                class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 scale-up-center">
-                <i class="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Tem certeza?</h3>
-            <p class="text-sm text-slate-500 mb-6">Você está prestes a excluir este ativo permanentemente. Confirmar
-                exclusão?</p>
-            <div class="flex gap-3">
-                <button onclick="closeDeleteModal()"
-                    class="flex-1 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl font-semibold transition-colors">Cancelar</button>
-                <button onclick="executeDelete()"
-                    class="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-all">Excluir</button>
-            </div>
-        </div>
-    </div>
+
 
     <div id="liquidation-modal"
         class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
@@ -1434,6 +1415,86 @@
         window.proventos = [];
         window.liquidationHistory = [];
 
+        // --- Local Data Manager (Test Mode) ---
+        window.LocalDataManager = {
+            _get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
+            _set: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
+
+            getAssets: () => window.LocalDataManager._get('local_assets'),
+            saveAsset: (asset) => {
+                let assets = window.LocalDataManager.getAssets();
+                const idx = assets.findIndex(a => a.id == asset.id);
+                if (idx >= 0) assets[idx] = asset; else assets.push(asset);
+                window.LocalDataManager._set('local_assets', assets);
+            },
+            deleteAsset: (id) => {
+                let assets = window.LocalDataManager.getAssets();
+                assets = assets.filter(a => a.id != id);
+                window.LocalDataManager._set('local_assets', assets);
+            },
+            getHistory: () => window.LocalDataManager._get('local_history'),
+            saveHistory: (item) => {
+                let hist = window.LocalDataManager.getHistory();
+                hist.push({ ...item, id: Date.now().toString() });
+                window.LocalDataManager._set('local_history', hist);
+            },
+            getProventos: () => window.LocalDataManager._get('local_proventos'),
+            saveProvento: (item) => {
+                let provs = window.LocalDataManager.getProventos();
+                if (item.id) {
+                    const idx = provs.findIndex(p => p.id == item.id);
+                    if (idx >= 0) provs[idx] = item; else provs.push(item);
+                } else {
+                    item.id = Date.now().toString();
+                    provs.push(item);
+                }
+                window.LocalDataManager._set('local_proventos', provs);
+            },
+            deleteProvento: (id) => {
+                let provs = window.LocalDataManager.getProventos();
+                provs = provs.filter(p => p.id != id);
+                window.LocalDataManager._set('local_proventos', provs);
+            }
+        };
+
+        window.initializeLocalMode = () => {
+            console.log(">>> Initializing Local Test Mode");
+            const assets = window.LocalDataManager.getAssets();
+
+            window.mockReservaAssets = []; window.mockRendaFixaAssets = [];
+            window.mockTesouroAssets = []; window.mockRendaVariavelAssets = [];
+
+            assets.forEach(asset => {
+                if (asset.category === 'renda-variavel' || asset.ticker) window.mockRendaVariavelAssets.push(asset);
+                else if (asset.category === 'tesouro' || (asset.type && asset.type.includes('Tesouro'))) window.mockTesouroAssets.push(asset);
+                else if (asset.category === 'renda-fixa') window.mockRendaFixaAssets.push(asset);
+                else window.mockReservaAssets.push(asset);
+            });
+
+            window.liquidationHistory = window.LocalDataManager.getHistory();
+            window.proventos = window.LocalDataManager.getProventos();
+
+            // Smart Render based on context
+            if (currentContext === 'renda-variavel' && window.renderRendaVariavel) window.renderRendaVariavel();
+            else if (currentContext === 'tesouro' && window.renderTesouro) window.renderTesouro();
+            else if (currentContext === 'renda-fixa' && window.renderRendaFixa) window.renderRendaFixa();
+            else if (currentContext === 'reserva' && window.renderReserva) window.renderReserva();
+            else if (window.renderDashboard) window.renderDashboard();
+
+            // Update UI
+            const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
+            if (headerName) {
+                headerName.textContent = "Modo de Teste Local";
+                headerName.classList.remove('text-slate-700');
+                headerName.classList.add('text-orange-600');
+            }
+            const sbName = document.getElementById('sidebar-user-name');
+            if (sbName) sbName.textContent = "Teste Local";
+
+            const loginOverlay = document.getElementById('login-overlay');
+            if (loginOverlay) loginOverlay.classList.add('opacity-0', 'pointer-events-none');
+        };
+
         // Default rebalance goals structure to prevent access errors before load
         window.rebalanceGoals = {
             'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
@@ -1517,40 +1578,10 @@
 
                 setupRealtimeListeners(user.uid);
             } else {
-                console.log("Desconectado.");
-                if (loginOverlay) loginOverlay.classList.remove('opacity-0', 'pointer-events-none');
-
-                const headerName = document.querySelector('.text-base.font-bold.text-slate-700');
-                if (headerName) headerName.textContent = "Visitante";
-
-                // Sidebar Update (Reset)
-                const sbName = document.getElementById('sidebar-user-name');
-                const sbEmail = document.getElementById('sidebar-user-email');
-                const sbAvatar = document.getElementById('sidebar-user-avatar');
-                if (sbName) sbName.textContent = "Visitante";
-                if (sbEmail) sbEmail.textContent = "teste@local.com";
-                if (sbAvatar) sbAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
-
-                // Clear Data / Listeners
+                console.log("Desconectado. Iniciando Modo Local...");
                 unsubscribeListeners.forEach(unsub => unsub());
                 unsubscribeListeners = [];
-                window.mockReservaAssets.length = 0;
-                window.mockRendaFixaAssets.length = 0;
-                window.mockTesouroAssets.length = 0;
-                window.mockRendaVariavelAssets.length = 0;
-                window.proventos = [];
-                window.liquidationHistory = [];
-
-                // Reset Goals to Default Structure
-                window.rebalanceGoals = {
-                    'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
-                    'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 30, 'Renda Fixa IPCA': 30, 'Tesouro IPCA': 40 } },
-                    'renda-variavel': { target: 30, subs: { 'Ações': 50, 'FIIs': 25, 'Exterior': 20, 'Cripto': 5 } },
-                    'aposentadoria': { target: 20, subs: { 'Tesouro Renda+': 100 } }
-                };
-
-                // Refresh UI to Empty
-                if (window.renderDashboard) renderDashboard();
+                window.initializeLocalMode();
             }
         });
 
@@ -1715,22 +1746,12 @@
         }
 
         // --- Wrapper Functions (Updated to use auth.currentUser.uid) ---
+        // --- Wrapper Functions (Updated to use auth.currentUser.uid or LocalStorage) ---
         window.firebaseSaveAsset = async (assetData) => {
             if (!auth.currentUser) {
-                // Visitor Mode Save
-                const ctx = assetData.category;
-                assetData.id = assetData.id || Date.now().toString(); // Ensure ID
-                if (ctx === 'tesouro') window.mockTesouroAssets.push(assetData);
-                else if (ctx === 'reserva') window.mockReservaAssets.push(assetData);
-                else if (ctx === 'renda-fixa') window.mockRendaFixaAssets.push(assetData);
-                else window.mockRendaVariavelAssets.push(assetData);
-
-                // Re-render
-                if (window.renderDashboard) renderDashboard();
-                if (ctx === 'renda-variavel') renderRendaVariavel();
-                else if (ctx === 'tesouro') renderTesouro();
-                else if (ctx === 'renda-fixa') renderRendaFixa();
-                else renderReserva();
+                assetData.id = assetData.id || Date.now().toString();
+                window.LocalDataManager.saveAsset(assetData);
+                window.initializeLocalMode();
                 return;
             }
             try {
@@ -1740,27 +1761,12 @@
 
         window.firebaseUpdateAsset = async (id, data) => {
             if (!auth.currentUser) {
-                // Visitor Mode Update
-                const updateInArray = (arr) => {
-                    const idx = arr.findIndex(a => a.id == id);
-                    if (idx !== -1) {
-                        arr[idx] = { ...arr[idx], ...data };
-                        return true;
-                    }
-                    return false;
-                };
-
-                let found = updateInArray(window.mockReservaAssets);
-                if (!found) found = updateInArray(window.mockRendaFixaAssets);
-                if (!found) found = updateInArray(window.mockTesouroAssets);
-                if (!found) found = updateInArray(window.mockRendaVariavelAssets);
-
-                // Re-render
-                if (window.renderDashboard) renderDashboard();
-                if (currentContext === 'renda-variavel') renderRendaVariavel();
-                else if (currentContext === 'tesouro') renderTesouro();
-                else if (currentContext === 'renda-fixa') renderRendaFixa();
-                else if (currentContext === 'reserva') renderReserva();
+                const assets = window.LocalDataManager.getAssets();
+                const idx = assets.findIndex(a => a.id == id);
+                if (idx !== -1) {
+                    window.LocalDataManager.saveAsset({ ...assets[idx], ...data });
+                    window.initializeLocalMode();
+                }
                 return;
             }
             try {
@@ -1770,27 +1776,8 @@
 
         window.firebaseDeleteAsset = async (id) => {
             if (!auth.currentUser) {
-                // Visitor Mode Delete
-                const deleteInArray = (arr) => {
-                    const idx = arr.findIndex(a => a.id == id);
-                    if (idx !== -1) {
-                        arr.splice(idx, 1);
-                        return true;
-                    }
-                    return false;
-                };
-
-                let found = deleteInArray(window.mockReservaAssets);
-                if (!found) found = deleteInArray(window.mockRendaFixaAssets);
-                if (!found) found = deleteInArray(window.mockTesouroAssets);
-                if (!found) found = deleteInArray(window.mockRendaVariavelAssets);
-
-                // Re-render
-                if (window.renderDashboard) renderDashboard();
-                if (currentContext === 'renda-variavel') renderRendaVariavel();
-                else if (currentContext === 'tesouro') renderTesouro();
-                else if (currentContext === 'renda-fixa') renderRendaFixa();
-                else if (currentContext === 'reserva') renderReserva();
+                window.LocalDataManager.deleteAsset(id);
+                window.initializeLocalMode();
                 return;
             }
             try {
@@ -1799,50 +1786,21 @@
         };
 
         window.firebaseSaveHistory = async (historyData) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                window.LocalDataManager.saveHistory(historyData);
+                return;
+            }
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'history'), historyData);
             } catch (e) { console.error(e); }
         };
 
-        window.firebaseSaveGoal = async (value) => {
-            if (!auth.currentUser) return;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { annualGoal: parseFloat(value) }, { merge: true });
-            } catch (e) { console.error(e); }
-        };
-
-        window.firebaseSaveProventosGoal = async (value) => {
-            if (!auth.currentUser) return;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { proventosGoal: parseFloat(value) }, { merge: true });
-            } catch (e) { console.error(e); }
-        };
-
-        window.firebaseSaveCash = async (value) => {
-            if (!auth.currentUser) return;
-            try {
-                window.availableCash = parseFloat(value);
-                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { availableCash: parseFloat(value) }, { merge: true });
-            } catch (e) { console.error(e); }
-        };
-
-        window.firebaseSaveAssetGoals = async (goals) => {
-            if (!auth.currentUser) return;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rv_goals'), { goals }, { merge: true });
-            } catch (e) { console.error(e); }
-        };
-
-        window.firebaseSaveRebalanceGoals = async (rebGoals) => {
-            if (!auth.currentUser) return;
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rebalance_goals'), { goals: rebGoals });
-            } catch (e) { console.error(e); }
-        };
-
         window.firebaseSaveProvento = async (provData) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                window.LocalDataManager.saveProvento(provData);
+                window.initializeLocalMode();
+                return;
+            }
             try {
                 const id = provData.id;
                 await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'proventos', id), provData);
@@ -1850,18 +1808,40 @@
         };
 
         window.firebaseUpdateProvento = async (id, data) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                const provs = window.LocalDataManager.getProventos();
+                const idx = provs.findIndex(p => p.id == id);
+                if (idx !== -1) {
+                    window.LocalDataManager.saveProvento({ ...provs[idx], ...data });
+                    window.initializeLocalMode();
+                }
+                return;
+            }
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'proventos', id), data);
             } catch (e) { console.error(e); }
         };
 
         window.firebaseDeleteProvento = async (id) => {
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                window.LocalDataManager.deleteProvento(id);
+                window.initializeLocalMode();
+                return;
+            }
             try {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'proventos', id));
             } catch (e) { console.error(e); }
         };
+
+        // Stubbed Settings for now (Goals etc not fully local yet, but prevents crash)
+        window.firebaseSaveGoal = async (value) => { if (auth.currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { annualGoal: parseFloat(value) }, { merge: true }); };
+        window.firebaseSaveProventosGoal = async (value) => { if (auth.currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { proventosGoal: parseFloat(value) }, { merge: true }); };
+        window.firebaseSaveCash = async (value) => {
+            window.availableCash = parseFloat(value);
+            if (auth.currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'goals'), { availableCash: parseFloat(value) }, { merge: true });
+        };
+        window.firebaseSaveAssetGoals = async (goals) => { if (auth.currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rv_goals'), { goals }, { merge: true }); };
+        window.firebaseSaveRebalanceGoals = async (rebGoals) => { if (auth.currentUser) await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'rebalance_goals'), { goals: rebGoals }); };
 
     </script>
 
@@ -4260,6 +4240,8 @@
             });
         };
 
+
+
         window.saveNewAsset = () => {
             console.log(">>> saveNewAsset Triggered");
             if (!validateInputs('modal-fields-container')) {
@@ -4270,14 +4252,12 @@
             const context = document.getElementById('modal-context').value;
             const editId = document.getElementById('edit-asset-id').value;
             const dateInv = document.getElementById('application-date').value;
-            // Pegar corretora de forma dinâmica (agora existe em todos os forms)
             const broker = document.getElementById('input-broker')?.value || 'Manual';
 
             console.log(">>> saveNewAsset Context:", context, "EditID:", editId);
 
             let newItem = {};
 
-            // Helper para formatar a taxa
             const getFormattedRate = () => {
                 const rType = document.getElementById('input-rate-type')?.value;
                 const rVal = document.getElementById('input-rate-val')?.value;
@@ -4289,49 +4269,53 @@
                 return `${rType} ${rVal}%`;
             };
 
+            // Determine ID: Use existing if editing, otherwise new
+            const finalId = editId ? editId : Date.now().toString();
+
             if (context === 'renda-variavel') {
-                const type = document.getElementById('input-type').value; const ticker = document.getElementById('input-ticker').value.toUpperCase(); const qty = parseFloat(document.getElementById('input-qty').value);
+                const type = document.getElementById('input-type').value;
+                const ticker = document.getElementById('input-ticker').value.toUpperCase();
+                const qty = parseFloat(document.getElementById('input-qty').value);
                 const price = window.parseCurrencyValue(document.getElementById('input-buy-price').value);
                 const costs = window.parseCurrencyValue(document.getElementById('input-other-costs')?.value);
                 const currency = document.getElementById('input-currency')?.value || 'BRL';
+
                 if (!ticker || qty <= 0 || price <= 0) return alert("Preencha todos os campos corretamente.");
-                const totalSpent = (qty * price) + costs; const avgPriceWithCosts = totalSpent / qty;
-                newItem = { id: Date.now().toString(), dateInv, type, ticker, quantity: qty, avgPrice: avgPriceWithCosts, currentPrice: price, broker: broker, currency, category: 'renda-variavel' };
-            } else {
-                if (context === 'tesouro') {
-                    const type = document.getElementById('input-type').value;
-                    const maturity = document.getElementById('input-maturity').value;
-                    const year = maturity ? maturity.split('-')[0] : '';
 
-                    let displayYear = year;
-                    if (type && type.includes('Renda+') && year) {
-                        const y = parseInt(year);
-                        if (!isNaN(y)) displayYear = y - 19;
-                    }
+                const totalSpent = (qty * price) + costs;
+                const avgPriceWithCosts = totalSpent / qty;
 
-                    // Força a padronização do nome (Tipo + Ano)
-                    const issuer = `${type} ${displayYear}`;
+                newItem = { id: finalId, dateInv, type, ticker, quantity: qty, avgPrice: avgPriceWithCosts, currentPrice: price, broker: broker, currency, category: 'renda-variavel' };
 
-                    const qty = parseFloat(document.getElementById('input-qty').value) || 0;
-                    const unitPrice = window.parseCurrencyValue(document.getElementById('input-unit-price').value);
-                    const invested = window.parseCurrencyValue(document.getElementById('input-total-calc').value);
+            } else if (context === 'tesouro') {
+                const type = document.getElementById('input-type').value;
+                const maturity = document.getElementById('input-maturity').value;
+                const year = maturity ? maturity.split('-')[0] : '';
 
-                    // Tesouro Invested Logic (Fixed)
-                    // If input-total-calc is present and has value, use it. Otherwise qty * unitPrice.
-                    // Important: `input-total-calc` is disabled, but programmed to be updated.
-                    // If it is just a helper, we should rely on it but `parseFloat` if it is not masked with dots/commas as thousands.
-                    // However, we used `parseCurrencyValue` which expects string BRL.
-
-                    const rate = getFormattedRate();
-                    const investedCalc = invested || (qty * unitPrice);
-                    newItem = { id: Date.now().toString(), dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
-                } else {
-                    const type = document.getElementById('input-type').value; const issuer = document.getElementById('input-issuer').value;
-                    const invested = window.parseCurrencyValue(document.getElementById('input-invested').value);
-                    const maturity = document.getElementById('input-maturity').value;
-                    const rate = getFormattedRate();
-                    newItem = { id: Date.now().toString(), dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
+                let displayYear = year;
+                if (type && type.includes('Renda+') && year) {
+                    const y = parseInt(year);
+                    if (!isNaN(y)) displayYear = y - 19;
                 }
+
+                const issuer = `${type} ${displayYear}`;
+                const qty = parseFloat(document.getElementById('input-qty').value) || 0;
+                const unitPrice = window.parseCurrencyValue(document.getElementById('input-unit-price').value);
+                const invested = window.parseCurrencyValue(document.getElementById('input-total-calc').value);
+                const rate = getFormattedRate();
+                const investedCalc = invested || (qty * unitPrice);
+
+                newItem = { id: finalId, dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
+
+            } else {
+                // Renda Fixa / Reserva
+                const type = document.getElementById('input-type').value;
+                const issuer = document.getElementById('input-issuer').value;
+                const invested = window.parseCurrencyValue(document.getElementById('input-invested').value);
+                const maturity = document.getElementById('input-maturity').value;
+                const rate = getFormattedRate();
+
+                newItem = { id: finalId, dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
             }
 
             console.log(">>> Saving Item:", newItem);
@@ -4343,6 +4327,15 @@
                     window.firebaseUpdateAsset(editId, newItem);
                     closeModal();
                     showSuccessMessage("Ativo atualizado!");
+
+                    // Force UI Update
+                    setTimeout(() => {
+                        if (currentContext === 'renda-variavel') renderRendaVariavel();
+                        else if (currentContext === 'tesouro') renderTesouro();
+                        else if (currentContext === 'renda-fixa') renderRendaFixa();
+                        else if (currentContext === 'reserva') renderReserva();
+                        else if (window.renderDashboard) window.renderDashboard();
+                    }, 50);
                 }
             } else {
                 // Modo Criação
@@ -4350,17 +4343,160 @@
                     console.log(">>> Calling firebaseSaveAsset...");
                     window.firebaseSaveAsset(newItem);
                     closeModal();
-                    showSuccessMessage("Enviando para o Firebase...");
-                } else {
-                    // Fallback if generic save fails
-                    alert("Erro: Conexão com Firebase não encontrada.");
+                    showSuccessMessage("Salvo com sucesso!");
+
+                    // Force UI Update
+                    setTimeout(() => {
+                        if (currentContext === 'renda-variavel') renderRendaVariavel();
+                        else if (currentContext === 'tesouro') renderTesouro();
+                        else if (currentContext === 'renda-fixa') renderRendaFixa();
+                        else if (currentContext === 'reserva') renderReserva();
+                        else if (window.renderDashboard) window.renderDashboard();
+                    }, 50);
                 }
             }
         };
 
-        // DEBUG CP 3
         console.log("DEBUG CP: 3 (LATE)");
         if (window.updateStatus) window.updateStatus('render', 'CP: 3 (LATE)', 'orange');
+
+        // --- MISSING FUNCTIONS RESTORATION ---
+
+        window.selectCategory = (category) => {
+            document.getElementById('modal-context').value = category;
+            const container = document.getElementById('modal-fields-container');
+            container.innerHTML = ''; // Limpa campos
+
+            // Renderiza campos específicos
+            if (category === 'renda-variavel') renderRendaVariavelFields(container);
+            else if (category === 'tesouro') renderTesouroFields(container);
+            else renderRendaFixaFields(container, category);
+
+            // Re-ativa máscaras
+            if (window.setupCurrencyMasks) window.setupCurrencyMasks();
+        };
+
+        // --- LÓGICA DE EXCLUSÃO DE ATIVOS ---
+        window.openAssetDeleteModal = (id) => {
+            const modal = document.getElementById('delete-confirmation-modal');
+            document.getElementById('delete-target-id').value = id;
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        };
+
+        window.closeAssetDeleteModal = () => {
+            const modal = document.getElementById('delete-confirmation-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        window.confirmAssetDelete = () => {
+            const id = document.getElementById('delete-target-id').value;
+            console.log(">>> confirmAssetDelete Triggered. ID:", id);
+            if (id && window.firebaseDeleteAsset) {
+                console.log(">>> calling window.firebaseDeleteAsset...");
+                window.firebaseDeleteAsset(id);
+                console.log(">>> closeAssetDeleteModal...");
+                closeAssetDeleteModal();
+                showSuccessMessage("Ativo excluído!");
+
+                // Update UI based on context
+                if (currentContext === 'renda-variavel') renderRendaVariavel();
+                else if (currentContext === 'tesouro') renderTesouro();
+                else if (currentContext === 'renda-fixa') renderRendaFixa();
+                else if (currentContext === 'reserva') renderReserva();
+                else if (window.renderDashboard) window.renderDashboard();
+
+            } else {
+                console.error(">>> confirmAssetDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
+            }
+        };
+
+        // --- LÓGICA DE LIQUIDAÇÃO ---
+        window.openLiquidationModal = (id) => {
+            console.log("Opening Liquidation Modal for ID:", id);
+            const modal = document.getElementById('liquidation-modal');
+            document.getElementById('liquidation-asset-id').value = id;
+
+            // Encontrar o ativo para mostrar dados
+            let asset;
+            if (currentContext === 'renda-variavel') asset = window.mockRendaVariavelAssets.find(a => a.id == id);
+            else if (currentContext === 'tesouro') asset = window.mockTesouroAssets.find(a => a.id == id);
+            else if (currentContext === 'renda-fixa') asset = window.mockRendaFixaAssets.find(a => a.id == id);
+            else asset = window.mockReservaAssets.find(a => a.id == id);
+
+            const infoDiv = document.getElementById('liquidation-asset-info');
+            if (asset) {
+                const name = asset.ticker || asset.issuer || asset.type;
+                const val = asset.currentPrice ? (asset.quantity * asset.currentPrice) : asset.current;
+                infoDiv.innerHTML = `<p class="font-bold text-slate-700">${name}</p><p class="text-sm text-slate-500">Valor Atual Estimado: ${window.formatCurrency(val)}</p>`;
+                document.getElementById('liq-value').value = (val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('opacity-0', 'scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        };
+
+        window.closeLiquidationModal = () => {
+            const modal = document.getElementById('liquidation-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('opacity-0', 'scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        window.confirmLiquidation = () => {
+            const id = document.getElementById('liquidation-asset-id').value;
+            const finalValue = window.parseCurrencyValue(document.getElementById('liq-value').value);
+            const costs = window.parseCurrencyValue(document.getElementById('liq-costs').value);
+
+            if (!id) return;
+
+            // Encontrar o ativo original
+            let asset;
+            if (currentContext === 'renda-variavel') asset = window.mockRendaVariavelAssets.find(a => a.id == id);
+            else if (currentContext === 'tesouro') asset = window.mockTesouroAssets.find(a => a.id == id);
+            else if (currentContext === 'renda-fixa') asset = window.mockRendaFixaAssets.find(a => a.id == id);
+            else asset = window.mockReservaAssets.find(a => a.id == id);
+
+            if (asset) {
+                const invested = asset.invested || (asset.quantity * asset.avgPrice) || 0;
+                const profit = finalValue - invested - costs; // Lucro Líquido
+                const roi = invested > 0 ? (profit / invested) * 100 : 0;
+
+                // Salvar no Histórico
+                const historyItem = {
+                    date: new Date().toISOString().split('T')[0],
+                    assetName: asset.ticker || asset.issuer || asset.type,
+                    category: asset.category,
+                    invested: invested,
+                    finalValue: finalValue,
+                    profit: profit,
+                    roi: roi
+                };
+
+                if (window.firebaseSaveHistory) window.firebaseSaveHistory(historyItem);
+
+                // Deletar o ativo
+                if (window.firebaseDeleteAsset) window.firebaseDeleteAsset(id);
+
+                closeLiquidationModal();
+                showSuccessMessage("Liquidação realizada com sucesso!");
+
+                // Update UI based on context
+                setTimeout(() => {
+                    if (currentContext === 'renda-variavel') renderRendaVariavel();
+                    else if (currentContext === 'tesouro') renderTesouro();
+                    else if (currentContext === 'renda-fixa') renderRendaFixa();
+                    else if (currentContext === 'reserva') renderReserva();
+                    else if (window.renderDashboard) window.renderDashboard();
+                }, 50);
+            }
+        };
 
         // --- LÓGICA DE FILTRAGEM DO TESOURO ---
         // --- LÓGICA DE FILTRAGEM GENÉRICA (Tesouro e Renda Variável) ---
@@ -4822,11 +4958,12 @@
                 console.log(">>> closeAssetDeleteModal...");
                 closeAssetDeleteModal();
                 showSuccessMessage("Ativo excluído!");
-                // Force Update
-                setTimeout(() => {
-                    console.log(">>> Re-rendering Dashboard...");
-                    if (window.renderDashboard) window.renderDashboard();
-                }, 500);
+                // Update UI based on context
+                if (currentContext === 'renda-variavel') renderRendaVariavel();
+                else if (currentContext === 'tesouro') renderTesouro();
+                else if (currentContext === 'renda-fixa') renderRendaFixa();
+                else if (currentContext === 'reserva') renderReserva();
+                else if (window.renderDashboard) window.renderDashboard();
             } else {
                 console.error(">>> confirmAssetDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
             }
@@ -5797,6 +5934,9 @@
             if (window.calculateProventosConversion) window.calculateProventosConversion();
         }
 
+
+
+
         window.saveProvento = () => {
             const date = document.getElementById('prov-date').value;
             const asset = document.getElementById('prov-asset').value.toUpperCase();
@@ -6064,6 +6204,7 @@
         window.renderHistorico = renderHistorico;
         window.renderRebalanceamento = renderRebalanceamento;
         window.calculateGlobalMetrics = calculateGlobalMetrics;
+        console.log("DEBUG CP: 4 (END OF SCRIPT)");
     </script>
 
     <!-- Logout Confirmation Modal -->
