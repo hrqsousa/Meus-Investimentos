@@ -4707,20 +4707,27 @@
         };
 
         window.confirmLiquidation = () => {
+            console.log(">>> confirmLiquidation Triggered");
             const id = document.getElementById('liq-asset-id').value;
-            const date = document.getElementById('liq-date').value;
             const context = document.getElementById('liq-context').value;
-            let asset;
+            const date = document.getElementById('liq-date').value;
+            const finalValueNative = window.parseCurrencyValue(document.getElementById('liq-final-value').value);
 
+            console.log(">>> Liquidation Details:", { id, context, date, finalValueNative, type: liquidationType });
+
+            let asset;
             if (context === 'renda-variavel') asset = window.mockRendaVariavelAssets.find(a => a.id == id);
             else if (context === 'tesouro') asset = window.mockTesouroAssets.find(a => a.id == id);
-            else if (context === 'renda-fixa') asset = window.mockRendaFixaAssets.find(a => a.id == id);
+            else if (context === 'renda-fixa') asset = window.mockRendaFixaAssets.find(a => a.id == id); // FIXED: Renda Fixa context check
             else {
                 asset = window.mockReservaAssets.find(a => a.id == id);
                 if (!asset) asset = window.mockTesouroAssets.find(a => a.id == id);
             }
 
-            if (!asset) return;
+            if (!asset) {
+                console.error(">>> Liquidation FAILED: Asset not found for ID", id);
+                return alert("Erro: Ativo não encontrado.");
+            }
 
             if (!validateInputs('liquidation-modal-content')) return;
 
@@ -4837,6 +4844,7 @@
         };
 
         window.confirmDelete = () => {
+            const id = document.getElementById('delete-target-id').value;
             console.log(">>> confirmDelete Triggered. ID:", id);
             if (id && window.firebaseDeleteAsset) {
                 console.log(">>> calling window.firebaseDeleteAsset...");
