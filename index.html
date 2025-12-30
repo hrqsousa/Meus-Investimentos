@@ -4328,6 +4328,21 @@
                 if (window.firebaseUpdateAsset) {
                     console.log(">>> Calling firebaseUpdateAsset with await...");
                     await window.firebaseUpdateAsset(editId, newItem);
+
+                    // Optimistic Update (Logged Mode)
+                    if (window.user) {
+                        let targetArray = null;
+                        if (currentContext === 'renda-variavel') targetArray = window.mockRendaVariavelAssets;
+                        else if (currentContext === 'tesouro') targetArray = window.mockTesouroAssets;
+                        else if (currentContext === 'renda-fixa') targetArray = window.mockRendaFixaAssets;
+                        else targetArray = window.mockReservaAssets;
+
+                        if (targetArray) {
+                            const idx = targetArray.findIndex(a => a.id == editId);
+                            if (idx !== -1) targetArray[idx] = newItem;
+                        }
+                    }
+
                     closeModal();
                     showSuccessMessage("Ativo atualizado!");
 
@@ -4345,6 +4360,15 @@
                 if (window.firebaseSaveAsset) {
                     console.log(">>> Calling firebaseSaveAsset with await...");
                     await window.firebaseSaveAsset(newItem);
+
+                    // Optimistic Update (Logged Mode)
+                    if (window.user) {
+                        if (newItem.category === 'renda-variavel' || newItem.ticker) window.mockRendaVariavelAssets.push(newItem);
+                        else if (newItem.category === 'tesouro' || (newItem.type && newItem.type.includes('Tesouro'))) window.mockTesouroAssets.push(newItem);
+                        else if (newItem.category === 'renda-fixa') window.mockRendaFixaAssets.push(newItem);
+                        else window.mockReservaAssets.push(newItem);
+                    }
+
                     closeModal();
                     showSuccessMessage("Salvo com sucesso!");
 
@@ -4486,6 +4510,14 @@
 
                 // Deletar o ativo
                 if (window.firebaseDeleteAsset) await window.firebaseDeleteAsset(id);
+
+                // Optimistic Update (Logged Mode)
+                if (window.user) {
+                    if (currentContext === 'renda-variavel') window.mockRendaVariavelAssets = window.mockRendaVariavelAssets.filter(a => a.id != id);
+                    else if (currentContext === 'tesouro') window.mockTesouroAssets = window.mockTesouroAssets.filter(a => a.id != id);
+                    else if (currentContext === 'renda-fixa') window.mockRendaFixaAssets = window.mockRendaFixaAssets.filter(a => a.id != id);
+                    else window.mockReservaAssets = window.mockReservaAssets.filter(a => a.id != id);
+                }
 
                 closeLiquidationModal();
                 showSuccessMessage("Liquidação realizada com sucesso!");
@@ -4958,6 +4990,15 @@
             if (id && window.firebaseDeleteAsset) {
                 console.log(">>> calling window.firebaseDeleteAsset with await...");
                 await window.firebaseDeleteAsset(id);
+
+                // Optimistic Delete (Logged Mode)
+                if (window.user) {
+                    if (currentContext === 'renda-variavel') window.mockRendaVariavelAssets = window.mockRendaVariavelAssets.filter(a => a.id != id);
+                    else if (currentContext === 'tesouro') window.mockTesouroAssets = window.mockTesouroAssets.filter(a => a.id != id);
+                    else if (currentContext === 'renda-fixa') window.mockRendaFixaAssets = window.mockRendaFixaAssets.filter(a => a.id != id);
+                    else window.mockReservaAssets = window.mockReservaAssets.filter(a => a.id != id);
+                }
+
                 console.log(">>> closeAssetDeleteModal...");
                 closeAssetDeleteModal();
                 showSuccessMessage("Ativo excluído!");
@@ -5943,7 +5984,7 @@
 
 
 
-        window.saveProvento = () => {
+        window.saveProvento = async () => {
             const date = document.getElementById('prov-date').value;
             const asset = document.getElementById('prov-asset').value.toUpperCase();
             const category = document.getElementById('prov-category').value;
@@ -5979,16 +6020,30 @@
             if (id) {
                 // Edit
                 if (window.firebaseUpdateProvento) {
-                    window.firebaseUpdateProvento(id, provObj);
-                    showSuccessMessage("Atualizando...");
+                    await window.firebaseUpdateProvento(id, provObj);
+                    showSuccessMessage("Atualizado!");
+
+                    // Optimistic Update
+                    if (window.user) {
+                        const idx = window.proventos.findIndex(p => p.id == id);
+                        if (idx !== -1) window.proventos[idx] = provObj;
+                    }
                 }
             } else {
                 // New
                 if (window.firebaseSaveProvento) {
-                    window.firebaseSaveProvento(provObj);
-                    showSuccessMessage("Salvando...");
+                    await window.firebaseSaveProvento(provObj);
+                    showSuccessMessage("Salvo!");
+
+                    // Optimistic Update
+                    if (window.user) {
+                        window.proventos.push(provObj);
+                        window.proventos.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    }
                 }
             }
+
+            if (window.renderProventos) window.renderProventos();
 
             window.closeProventosModal();
         }
@@ -6063,11 +6118,18 @@
             proventoToDeleteId = null;
         }
 
-        window.confirmDeleteProvento = () => {
+        window.confirmDeleteProvento = async () => {
             if (proventoToDeleteId) {
                 if (window.firebaseDeleteProvento) {
-                    window.firebaseDeleteProvento(proventoToDeleteId);
-                    showSuccessMessage("Excluindo...");
+                    await window.firebaseDeleteProvento(proventoToDeleteId);
+
+                    // Optimistic Delete
+                    if (window.user) {
+                        window.proventos = window.proventos.filter(p => p.id != proventoToDeleteId);
+                        if (window.renderProventos) window.renderProventos();
+                    }
+
+                    showSuccessMessage("Excluído!");
                 }
             }
             closeProventoDeleteModal();
