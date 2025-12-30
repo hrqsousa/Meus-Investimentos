@@ -1889,6 +1889,9 @@
 
     <script>
         // Duplicate global initialization removed
+        window.currentUsdRate = 5.00;
+        window.annualGoal = 0;
+        window.rvAssetGoals = { 'PETR4': 20, 'VALE3': 20, 'HGLG11': 30, 'VT': 100, 'BTC': 100 };
         window.currentRvFilter = 'all';
         window.currentTesouroFilter = 'all';
 
@@ -1931,7 +1934,7 @@
 
         function calculateGlobalMetrics() {
             let totalValue = 0; let totalInvested = 0;
-            const process = (list) => { list.forEach(a => { let val = (a.current !== undefined && a.current !== null) ? a.current : (a.quantity * a.currentPrice); let cost = (a.invested !== undefined && a.invested !== null) ? a.invested : (a.quantity * a.avgPrice); if (a.currency === 'USD') { val *= currentUsdRate; cost *= currentUsdRate; } totalValue += val; totalInvested += cost; }); };
+            const process = (list) => { list.forEach(a => { let val = (a.current !== undefined && a.current !== null) ? a.current : (a.quantity * a.currentPrice); let cost = (a.invested !== undefined && a.invested !== null) ? a.invested : (a.quantity * a.avgPrice); if (a.currency === 'USD') { val *= window.currentUsdRate; cost *= window.currentUsdRate; } totalValue += val; totalInvested += cost; }); };
             process(window.mockReservaAssets); process(window.mockRendaFixaAssets); process(window.mockTesouroAssets); process(window.mockRendaVariavelAssets);
             const profit = totalValue - totalInvested; const profitPerc = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
             const caixaInput = document.getElementById('reb-caixa'); if (caixaInput) totalValue += (window.parseCurrencyValue(caixaInput.value) || 0);
