@@ -1528,13 +1528,12 @@
             }
         };
 
-        window.handleAnonymousLogin = async () => {
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Anon Login Error:", error);
-                alert("Erro no login anônimo: " + error.message);
-            }
+        window.handleAnonymousLogin = () => {
+            // Updated to use Local Test Mode instead of Firebase Anonymous
+            console.log(">>> Entering Local Test Mode from Login Screen");
+            const loginOverlay = document.getElementById('login-overlay');
+            if (loginOverlay) loginOverlay.classList.add('opacity-0', 'pointer-events-none');
+            window.initializeLocalMode();
         };
 
         // --- Auth State Observer ---
@@ -1542,10 +1541,6 @@
             // Updated for external access
             window.user = currentUser;
             if (window.updateStatus) window.updateStatus('auth', currentUser ? 'LOGGED IN' : 'LOGGED OUT', currentUser ? 'lime' : 'orange');
-
-            // Check for legacy anonymous session
-            // Legacy check removed to allow explicit Anonymous Login for testing
-            // if (currentUser && currentUser.isAnonymous) { ... }
 
             user = currentUser;
             const loginOverlay = document.getElementById('login-overlay');
@@ -1578,10 +1573,18 @@
 
                 setupRealtimeListeners(user.uid);
             } else {
-                console.log("Desconectado. Iniciando Modo Local...");
+                console.log("Desconectado via AuthStateChanged.");
+                // STOP auto-initializing local mode. Show Login Overlay instead.
+                if (loginOverlay) loginOverlay.classList.remove('opacity-0', 'pointer-events-none');
+
                 unsubscribeListeners.forEach(unsub => unsub());
                 unsubscribeListeners = [];
-                window.initializeLocalMode();
+
+                // Clear UI Data for Security
+                window.mockReservaAssets = []; window.mockRendaFixaAssets = [];
+                window.mockTesouroAssets = []; window.mockRendaVariavelAssets = [];
+                window.liquidationHistory = []; window.proventos = [];
+                if (window.renderDashboard) window.renderDashboard();
             }
         });
 
