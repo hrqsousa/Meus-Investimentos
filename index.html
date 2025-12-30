@@ -1604,7 +1604,9 @@
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const asset = { id: doc.id, ...data };
+                    // CRITICAL FIX: Spread data FIRST, then overwrite ID with doc.id
+                    // This ensures we use the Firestore Document ID for updates/deletes, NOT the internal timestamp ID.
+                    const asset = { ...data, id: doc.id };
 
                     if (asset.category === 'renda-variavel' || asset.ticker) {
                         window.mockRendaVariavelAssets.push(asset);
@@ -1628,7 +1630,8 @@
             const unsubHistory = onSnapshot(collection(db, 'artifacts', appId, 'users', userId, 'history'), (snapshot) => {
                 window.liquidationHistory.length = 0;
                 snapshot.forEach(doc => {
-                    window.liquidationHistory.push({ id: doc.id, ...doc.data() });
+                    // Fix ID here too
+                    window.liquidationHistory.push({ ...doc.data(), id: doc.id });
                 });
                 if (currentContext === 'historico') renderHistorico();
             });
@@ -1639,6 +1642,7 @@
                 window.proventos = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    // Fix ID here too
                     window.proventos.push({ ...data, id: doc.id });
                 });
                 window.proventos.sort((a, b) => new Date(b.date) - new Date(a.date));
