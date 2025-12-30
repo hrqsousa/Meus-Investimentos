@@ -2277,7 +2277,7 @@
                 else if (daysLeft < 90) { daysDisplay = `<span class="text-xs font-medium px-2 py-1 rounded-full bg-orange-100 text-orange-700">${daysLeft} dias</span>`; if (daysLeft < 15) liqIconClass = "text-yellow-500 hover:text-yellow-600"; }
 
                 const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-800 transition-colors";
-                tr.innerHTML = `<td class="px-6 py-4 pl-6"><span class="px-2 py-1 text-xs font-bold rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800 whitespace-nowrap">${item.type}</span></td><td class="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">${item.issuer}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${formatDate(item.maturity)}</td><td class="px-6 py-4 text-center">${daysDisplay}</td><td class="px-6 py-4 text-right text-slate-500 dark:text-slate-400">${formatCurrency(item.invested)}</td><td class="px-6 py-4 text-center text-xs font-medium bg-slate-50 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">${item.rate}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${item.broker}</td><td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100">${formatCurrency(item.current)}</td><td class="px-6 py-4 text-right"><div class="${profitClass} font-bold text-sm">${profitSign}${formatCurrency(profit)}</div><div class="${percClass} text-xs">${profitSign}${profitPerc.toFixed(2)}%</div></td><td class="px-6 py-4 text-center pr-6"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="${liqIconClass} transition-colors p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
+                tr.innerHTML = `<td class="px-6 py-4 pl-6"><span class="px-2 py-1 text-xs font-bold rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800 whitespace-nowrap">${item.type}</span></td><td class="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">${item.issuer}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${formatDate(item.maturity)}</td><td class="px-6 py-4 text-center">${daysDisplay}</td><td class="px-6 py-4 text-right text-slate-500 dark:text-slate-400">${formatCurrency(item.invested)}</td><td class="px-6 py-4 text-center text-xs font-medium bg-slate-50 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">${item.rate}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${item.broker}</td><td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100">${formatCurrency(item.current)}</td><td class="px-6 py-4 text-right"><div class="${profitClass} font-bold text-sm">${profitSign}${formatCurrency(profit)}</div><div class="${percClass} text-xs">${profitSign}${profitPerc.toFixed(2)}%</div></td><td class="px-6 py-4 text-center pr-6"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="${liqIconClass} transition-colors p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
                 tbody.appendChild(tr);
             });
             if (totalId) document.getElementById(totalId).textContent = formatCurrency(totalVal);
@@ -2373,7 +2373,7 @@
                     const itemSign = profit >= 0 ? '+' : '';
 
                     const childTr = document.createElement('tr'); childTr.className = `${childRowClass} child-row border-b border-slate-50 text-sm group-tesouro-${index}`;
-                    childTr.innerHTML = `<td class="px-6 py-3 text-slate-500 dark:text-slate-400 text-xs">Aporte ${formatDate(item.dateInv)}</td><td class="px-6 py-3 text-center text-slate-500 dark:text-slate-400 text-xs">${item.quantity ? item.quantity.toFixed(2) : '-'}</td><td colspan="2"></td><td class="px-6 py-3 text-right text-slate-500 dark:text-slate-400">${formatCurrency(item.invested)}</td><td class="px-6 py-3 text-right text-slate-700 dark:text-slate-200 font-medium">${formatCurrency(item.current)}</td><td class="px-6 py-3 text-right ${itemProfitClass} text-xs">${itemSign}${formatCurrency(profit)}</td><td class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="text-slate-400 hover:text-emerald-600 p-1"><i class="fa-solid fa-hand-holding-dollar"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="openDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button></div></td>`; tbody.appendChild(childTr);
+                    childTr.innerHTML = `<td class="px-6 py-3 text-slate-500 dark:text-slate-400 text-xs">Aporte ${formatDate(item.dateInv)}</td><td class="px-6 py-3 text-center text-slate-500 dark:text-slate-400 text-xs">${item.quantity ? item.quantity.toFixed(2) : '-'}</td><td colspan="2"></td><td class="px-6 py-3 text-right text-slate-500 dark:text-slate-400">${formatCurrency(item.invested)}</td><td class="px-6 py-3 text-right text-slate-700 dark:text-slate-200 font-medium">${formatCurrency(item.current)}</td><td class="px-6 py-3 text-right ${itemProfitClass} text-xs">${itemSign}${formatCurrency(profit)}</td><td class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="text-slate-400 hover:text-emerald-600 p-1"><i class="fa-solid fa-hand-holding-dollar"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button></div></td>`; tbody.appendChild(childTr);
                 });
             });
 
@@ -2467,7 +2467,7 @@
                 if (group.length === 1) {
                     let liqIconClass = daysLeft < 15 ? "text-yellow-500 hover:text-yellow-600" : "text-slate-400 hover:text-emerald-600";
                     if (daysLeft <= 0) liqIconClass = "text-red-500 hover:text-red-700 animate-pulse";
-                    tr.querySelector('td:last-child').innerHTML = `<div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${firstItem.id}')" class="${liqIconClass} transition-colors p-1"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${firstItem.id}')" class="text-slate-400 hover:text-blue-600 transition-colors p-1"><i class="fa-solid fa-pen"></i></button><button onclick="openDeleteModal('${firstItem.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1"><i class="fa-solid fa-trash"></i></button></div>`;
+                    tr.querySelector('td:last-child').innerHTML = `<div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${firstItem.id}')" class="${liqIconClass} transition-colors p-1"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${firstItem.id}')" class="text-slate-400 hover:text-blue-600 transition-colors p-1"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${firstItem.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1"><i class="fa-solid fa-trash"></i></button></div>`;
                 }
 
                 tbody.appendChild(tr);
@@ -2498,7 +2498,7 @@
                                 <div class="flex items-center justify-center gap-3">
                                     <button onclick="openLiquidationModal('${item.id}')" class="${liqIconClass} p-1"><i class="fa-solid fa-hand-holding-dollar"></i></button>
                                     <button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1"><i class="fa-solid fa-pen"></i></button>
-                                    <button onclick="openDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button>
+                                    <button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             </td>
                         `;
@@ -2774,7 +2774,7 @@
                     const itemProfitClass = itemProfitVal >= 0 ? 'text-emerald-600' : 'text-red-600';
                     const itemSign = itemProfitVal >= 0 ? '+' : '';
 
-                    childTr.innerHTML = `<td class="px-6 py-3 text-slate-500 text-xs pl-12" colspan="2"><i class="fa-regular fa-calendar mr-1"></i> ${formatDate(item.dateInv)} <span class="mx-2">•</span> ${item.broker}</td><td class="px-6 py-3 text-right text-slate-500 text-xs">${item.quantity}</td><td class="px-6 py-3 text-right text-slate-500 text-xs">Pago: ${formatCurrency(item.avgPrice, item.currency)}</td><td class="px-6 py-3 text-right text-slate-600 font-medium text-xs">${formatCurrency(itemTotalBRL, 'BRL')}</td><td class="px-6 py-3 text-right text-xs" colspan="2"></td><td class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="text-slate-400 hover:text-emerald-600 p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
+                    childTr.innerHTML = `<td class="px-6 py-3 text-slate-500 text-xs pl-12" colspan="2"><i class="fa-regular fa-calendar mr-1"></i> ${formatDate(item.dateInv)} <span class="mx-2">•</span> ${item.broker}</td><td class="px-6 py-3 text-right text-slate-500 text-xs">${item.quantity}</td><td class="px-6 py-3 text-right text-slate-500 text-xs">Pago: ${formatCurrency(item.avgPrice, item.currency)}</td><td class="px-6 py-3 text-right text-slate-600 font-medium text-xs">${formatCurrency(itemTotalBRL, 'BRL')}</td><td class="px-6 py-3 text-right text-xs" colspan="2"></td><td class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="text-slate-400 hover:text-emerald-600 p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
                     tbody.appendChild(childTr);
                 });
             });
@@ -4261,13 +4261,19 @@
         };
 
         window.saveNewAsset = () => {
-            if (!validateInputs('modal-fields-container')) return;
+            console.log(">>> saveNewAsset Triggered");
+            if (!validateInputs('modal-fields-container')) {
+                console.log(">>> Validation Failed");
+                return;
+            }
 
             const context = document.getElementById('modal-context').value;
             const editId = document.getElementById('edit-asset-id').value;
             const dateInv = document.getElementById('application-date').value;
             // Pegar corretora de forma dinâmica (agora existe em todos os forms)
             const broker = document.getElementById('input-broker')?.value || 'Manual';
+
+            console.log(">>> saveNewAsset Context:", context, "EditID:", editId);
 
             let newItem = {};
 
@@ -4308,46 +4314,16 @@
 
                     const qty = parseFloat(document.getElementById('input-qty').value) || 0;
                     const unitPrice = window.parseCurrencyValue(document.getElementById('input-unit-price').value);
-                    const invested = window.parseCurrencyValue(document.getElementById('input-total-calc').value); // Total Calculated is also masked if user types? Actually calculateTesouroTotal sets it. 
-                    // Wait, calculateTesouroTotal sets .value = (qty * price).toFixed(2). So it is standard number format "1234.56".
-                    // However, if the user edits it? The field is readonly usually? No, "input-total-calc" is disabled or readonly? 
-                    // Checking HTML... <input id="input-total-calc" disabled ...> 
-                    // So it will have dot format. `parseCurrencyValue` handles dots as thousands separators if likely. 
-                    // But if it comes from .toFixed(2), it is "1234.56". `parseCurrencyValue("1234.56")` -> clean "123456" -> 123456? WRONG.
-                    // If the field is calculated programmatically safely as "1234.56", we should use parseFloat.
-                    // BUT: user might be able to edit it? If it is disabled, we rely on calculation.
-                    // Let's check `calculateTesouroTotal`. I didn't change it to output formatted string.
-                    // In previous step: `total = qty * price;`... `totalEl.value = total.toFixed(2);`
-                    // So it remains valid float string.
-                    // RE-READ: I need to be careful. If `input-total-calc` is used as source of truth.
-                    // Actually, let's look at `input-invested` for Fixed Income. That one IS user editable and masked.
-                    // For Tesouro: `input-unit-price` is masked. `input-total-calc` is result.
-                    // `const invested = parseFloat(...)` is currently used.
-                    // If `input-total-calc` is purely output of `qty * price`, it uses dot decimal.
-                    // `parseCurrencyValue` expects comma decimal for BRL.
-                    // Exception: `input-total-calc` is NOT masked in my plan (it is disabled).
-                    // So for Tesouro: `invested` comes from `input-total-calc`.
+                    const invested = window.parseCurrencyValue(document.getElementById('input-total-calc').value);
 
-                    // ISSUE: `parseCurrencyValue` logic: `val.replace(/\./g, '').replace(',', '.')`
-                    // If val is "1234.56" (from toFixed), it becomes "123456" -> huge number.
-                    // FIX: `parseCurrencyValue` should detect if it's already a valid float-like string?
-                    // Or I should just use `parseFloat` for `input-total-calc` if it is not masked.
-
-                    // Let's use `parseFloat` for `input-total-calc` as it is not masked.
-                    // But `input-unit-price` IS masked.
-
-                    // Code below shows `input-invested` used for "Outros" (Fixed Income mock).
-                    // That one IS masked.
-
-                    // Decisions:
-                    // Tesouro `invested`: use parseFloat from `input-total-calc`.
-                    // Tesouro `unitPrice`: use parseCurrencyValue from `input-unit-price`.
-
-                    // Renda Fixa `invested`: use parseCurrencyValue from `input-invested`.
+                    // Tesouro Invested Logic (Fixed)
+                    // If input-total-calc is present and has value, use it. Otherwise qty * unitPrice.
+                    // Important: `input-total-calc` is disabled, but programmed to be updated.
+                    // If it is just a helper, we should rely on it but `parseFloat` if it is not masked with dots/commas as thousands.
+                    // However, we used `parseCurrencyValue` which expects string BRL.
 
                     const rate = getFormattedRate();
-                    // invested comes from calc, unmasked
-                    const investedCalc = parseFloat(document.getElementById('input-total-calc').value) || (qty * unitPrice);
+                    const investedCalc = invested || (qty * unitPrice);
                     newItem = { id: Date.now().toString(), dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
                 } else {
                     const type = document.getElementById('input-type').value; const issuer = document.getElementById('input-issuer').value;
@@ -4358,19 +4334,12 @@
                 }
             }
 
-
-
-            // Guest Mode / Fallback Persistence - REMOVED TO PREVENT DUPLICATION
-            // Logic is now handled inside firebaseSaveAsset/firebaseUpdateAsset wrappers
-            /*
-            if (!window.currentUser && context !== 'renda-variavel') {
-                // ...
-            }
-            */
+            console.log(">>> Saving Item:", newItem);
 
             if (editId) {
                 // Modo Edição
                 if (window.firebaseUpdateAsset) {
+                    console.log(">>> Calling firebaseUpdateAsset...");
                     window.firebaseUpdateAsset(editId, newItem);
                     closeModal();
                     showSuccessMessage("Ativo atualizado!");
@@ -4378,6 +4347,7 @@
             } else {
                 // Modo Criação
                 if (window.firebaseSaveAsset) {
+                    console.log(">>> Calling firebaseSaveAsset...");
                     window.firebaseSaveAsset(newItem);
                     closeModal();
                     showSuccessMessage("Enviando para o Firebase...");
@@ -4827,7 +4797,7 @@
             else renderReserva();
         };
 
-        window.openDeleteModal = (id) => {
+        window.openAssetDeleteModal = (id) => {
             document.getElementById('delete-target-id').value = id;
             const modal = document.getElementById('delete-confirmation-modal');
             modal.classList.remove('hidden');
@@ -4837,20 +4807,20 @@
             }, 10);
         };
 
-        window.closeDeleteModal = () => {
+        window.closeAssetDeleteModal = () => {
             const modal = document.getElementById('delete-confirmation-modal');
             modal.classList.add('opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
-        window.confirmDelete = () => {
+        window.confirmAssetDelete = () => {
             const id = document.getElementById('delete-target-id').value;
-            console.log(">>> confirmDelete Triggered. ID:", id);
+            console.log(">>> confirmAssetDelete Triggered. ID:", id);
             if (id && window.firebaseDeleteAsset) {
                 console.log(">>> calling window.firebaseDeleteAsset...");
                 window.firebaseDeleteAsset(id);
-                console.log(">>> closeDeleteModal...");
-                closeDeleteModal();
+                console.log(">>> closeAssetDeleteModal...");
+                closeAssetDeleteModal();
                 showSuccessMessage("Ativo excluído!");
                 // Force Update
                 setTimeout(() => {
@@ -4858,7 +4828,7 @@
                     if (window.renderDashboard) window.renderDashboard();
                 }, 500);
             } else {
-                console.error(">>> confirmDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
+                console.error(">>> confirmAssetDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
             }
         };
 
@@ -6167,9 +6137,9 @@
                     removido permanentemente do seu portfólio.</p>
                 <input type="hidden" id="delete-target-id">
                 <div class="flex gap-3 w-full">
-                    <button onclick="closeDeleteModal()"
+                    <button onclick="closeAssetDeleteModal()"
                         class="flex-1 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl font-medium transition-colors">Cancelar</button>
-                    <button onclick="confirmDelete()"
+                    <button onclick="confirmAssetDelete()"
                         class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-200 transition-colors">Excluir</button>
                 </div>
             </div>
