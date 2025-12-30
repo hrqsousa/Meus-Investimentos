@@ -1888,33 +1888,10 @@
     </script>
 
     <script>
-        // currentContext declaration removed (duplicate)
-        let currentUsdRate = 5.00;
-        window.annualGoal = 0; // Transformado em variável global
-        // Initial State for Goals (Default)
-        window.rebalanceGoals = {
-            'reserva': { target: 20, subs: { 'Reserva': 50, 'Tesouro Selic': 50 } },
-            'renda-fixa': { target: 30, subs: { 'Renda Fixa CDI': 30, 'Renda Fixa IPCA': 30, 'Tesouro IPCA': 40 } },
-            'renda-variavel': { target: 30, subs: { 'Ações': 50, 'FIIs': 25, 'Exterior': 20, 'Cripto': 5 } },
-            'aposentadoria': { target: 20, subs: { 'Tesouro Renda+': 100 } }
-        };
-        window.rvAssetGoals = { 'PETR4': 20, 'VALE3': 20, 'HGLG11': 30, 'VT': 100, 'BTC': 100 };
+        // Duplicate global initialization removed
         window.currentRvFilter = 'all';
         window.currentTesouroFilter = 'all';
 
-        // --- VARIÁVEIS GLOBAIS (window.*) PARA ACESSO NO MÓDULO FIREBASE ---
-        window.mockReservaAssets = [];
-        window.mockRendaFixaAssets = [];
-        window.mockTesouroAssets = [];
-        window.mockRendaVariavelAssets = [];
-        window.liquidationHistory = [];
-        // Variáveis locais para facilitar leitura dentro deste script
-        const mockDashboardAssets = [];
-        let mockReservaAssets = window.mockReservaAssets;
-        let mockRendaFixaAssets = window.mockRendaFixaAssets;
-        let mockTesouroAssets = window.mockTesouroAssets;
-        let mockRendaVariavelAssets = window.mockRendaVariavelAssets;
-        let liquidationHistory = window.liquidationHistory;
 
         // --- CURRENCY MASKS & PARSING ---
         // Converte string formatada ("1.234,56") para float (1234.56)
@@ -4857,15 +4834,20 @@
         };
 
         window.confirmDelete = () => {
-            const id = document.getElementById('delete-target-id').value;
+            console.log(">>> confirmDelete Triggered. ID:", id);
             if (id && window.firebaseDeleteAsset) {
+                console.log(">>> calling window.firebaseDeleteAsset...");
                 window.firebaseDeleteAsset(id);
+                console.log(">>> closeDeleteModal...");
                 closeDeleteModal();
                 showSuccessMessage("Ativo excluído!");
                 // Force Update
                 setTimeout(() => {
+                    console.log(">>> Re-rendering Dashboard...");
                     if (window.renderDashboard) window.renderDashboard();
                 }, 500);
+            } else {
+                console.error(">>> confirmDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
             }
         };
 
