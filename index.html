@@ -4245,7 +4245,7 @@
 
 
 
-        window.saveNewAsset = () => {
+        window.saveNewAsset = async () => {
             console.log(">>> saveNewAsset Triggered");
             if (!validateInputs('modal-fields-container')) {
                 console.log(">>> Validation Failed");
@@ -4326,8 +4326,8 @@
             if (editId) {
                 // Modo Edição
                 if (window.firebaseUpdateAsset) {
-                    console.log(">>> Calling firebaseUpdateAsset...");
-                    window.firebaseUpdateAsset(editId, newItem);
+                    console.log(">>> Calling firebaseUpdateAsset with await...");
+                    await window.firebaseUpdateAsset(editId, newItem);
                     closeModal();
                     showSuccessMessage("Ativo atualizado!");
 
@@ -4343,8 +4343,8 @@
             } else {
                 // Modo Criação
                 if (window.firebaseSaveAsset) {
-                    console.log(">>> Calling firebaseSaveAsset...");
-                    window.firebaseSaveAsset(newItem);
+                    console.log(">>> Calling firebaseSaveAsset with await...");
+                    await window.firebaseSaveAsset(newItem);
                     closeModal();
                     showSuccessMessage("Salvo com sucesso!");
 
@@ -4452,7 +4452,7 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
-        window.confirmLiquidation = () => {
+        window.confirmLiquidation = async () => {
             const id = document.getElementById('liquidation-asset-id').value;
             const finalValue = window.parseCurrencyValue(document.getElementById('liq-value').value);
             const costs = window.parseCurrencyValue(document.getElementById('liq-costs').value);
@@ -4482,10 +4482,10 @@
                     roi: roi
                 };
 
-                if (window.firebaseSaveHistory) window.firebaseSaveHistory(historyItem);
+                if (window.firebaseSaveHistory) await window.firebaseSaveHistory(historyItem);
 
                 // Deletar o ativo
-                if (window.firebaseDeleteAsset) window.firebaseDeleteAsset(id);
+                if (window.firebaseDeleteAsset) await window.firebaseDeleteAsset(id);
 
                 closeLiquidationModal();
                 showSuccessMessage("Liquidação realizada com sucesso!");
@@ -4952,21 +4952,24 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
-        window.confirmAssetDelete = () => {
+        window.confirmAssetDelete = async () => {
             const id = document.getElementById('delete-target-id').value;
             console.log(">>> confirmAssetDelete Triggered. ID:", id);
             if (id && window.firebaseDeleteAsset) {
-                console.log(">>> calling window.firebaseDeleteAsset...");
-                window.firebaseDeleteAsset(id);
+                console.log(">>> calling window.firebaseDeleteAsset with await...");
+                await window.firebaseDeleteAsset(id);
                 console.log(">>> closeAssetDeleteModal...");
                 closeAssetDeleteModal();
                 showSuccessMessage("Ativo excluído!");
-                // Update UI based on context
-                if (currentContext === 'renda-variavel') renderRendaVariavel();
-                else if (currentContext === 'tesouro') renderTesouro();
-                else if (currentContext === 'renda-fixa') renderRendaFixa();
-                else if (currentContext === 'reserva') renderReserva();
-                else if (window.renderDashboard) window.renderDashboard();
+
+                // Update UI based on context (Force Refresh)
+                setTimeout(() => {
+                    if (currentContext === 'renda-variavel') renderRendaVariavel();
+                    else if (currentContext === 'tesouro') renderTesouro();
+                    else if (currentContext === 'renda-fixa') renderRendaFixa();
+                    else if (currentContext === 'reserva') renderReserva();
+                    else if (window.renderDashboard) window.renderDashboard();
+                }, 50);
             } else {
                 console.error(">>> confirmAssetDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
             }
