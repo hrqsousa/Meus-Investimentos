@@ -305,9 +305,7 @@
                         <div
                             class="absolute right-0 bottom-0 w-32 h-32 bg-white/10 rounded-full translate-x-10 translate-y-10 transition-transform group-hover:scale-110">
                         </div>
-                        <div class="absolute z-20 top-4 right-4 cursor-pointer hover:bg-white/20 p-2 rounded-full transition-colors"
-                            onclick="openGoalModal()" title="Editar Meta"><i
-                                class="fa-solid fa-pen text-xs text-white/80"></i></div>
+
                         <div class="relative z-10" id="goal-card-content">
                             <p class="text-primary-light text-sm font-medium mb-1">Meta Anual</p>
                             <div class="h-20 flex items-center justify-center">
@@ -2277,7 +2275,8 @@
                 else if (daysLeft < 90) { daysDisplay = `<span class="text-xs font-medium px-2 py-1 rounded-full bg-orange-100 text-orange-700">${daysLeft} dias</span>`; if (daysLeft < 15) liqIconClass = "text-yellow-500 hover:text-yellow-600"; }
 
                 const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-800 transition-colors";
-                tr.innerHTML = `<td class="px-6 py-4 pl-6"><span class="px-2 py-1 text-xs font-bold rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800 whitespace-nowrap">${item.type}</span></td><td class="px-6 py-4 font-medium text-slate-700 dark:text-slate-200">${item.issuer}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${formatDate(item.maturity)}</td><td class="px-6 py-4 text-center">${daysDisplay}</td><td class="px-6 py-4 text-right text-slate-500 dark:text-slate-400">${formatCurrency(item.invested)}</td><td class="px-6 py-4 text-center text-xs font-medium bg-slate-50 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">${item.rate}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${item.broker}</td><td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100">${formatCurrency(item.current)}</td><td class="px-6 py-4 text-right"><div class="${profitClass} font-bold text-sm">${profitSign}${formatCurrency(profit)}</div><div class="${percClass} text-xs">${profitSign}${profitPerc.toFixed(2)}%</div></td><td class="px-6 py-4 text-center pr-6"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="${liqIconClass} transition-colors p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
+                // Clickable Issuer for Detail View
+                tr.innerHTML = `<td class="px-6 py-4 pl-6"><span class="px-2 py-1 text-xs font-bold rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800 whitespace-nowrap">${item.type}</span></td><td class="px-6 py-4 font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:text-blue-600 transition-colors decoration-blue-500 hover:underline underline-offset-4" onclick="openRFDetailModal('${item.id}')" title="Ver Detalhes">${item.issuer}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${formatDate(item.maturity)}</td><td class="px-6 py-4 text-center">${daysDisplay}</td><td class="px-6 py-4 text-right text-slate-500 dark:text-slate-400">${formatCurrency(item.invested)}</td><td class="px-6 py-4 text-center text-xs font-medium bg-slate-50 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">${item.rate}</td><td class="px-6 py-4 text-slate-600 dark:text-slate-400">${item.broker}</td><td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100">${formatCurrency(item.current)}</td><td class="px-6 py-4 text-right"><div class="${profitClass} font-bold text-sm">${profitSign}${formatCurrency(profit)}</div><div class="${percClass} text-xs">${profitSign}${profitPerc.toFixed(2)}%</div></td><td class="px-6 py-4 text-center pr-6"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="${liqIconClass} transition-colors p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 transition-colors p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
                 tbody.appendChild(tr);
             });
             if (totalId) document.getElementById(totalId).textContent = formatCurrency(totalVal);
@@ -3052,7 +3051,34 @@
             const profit = totalValue - totalInvested;
             const profitPerc = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
 
-            return { totalValue, totalInvested, profit, profitPerc };
+            // YTD Invested Calculation (Current Year Only)
+            const currentYear = new Date().getFullYear();
+            let ytdInvested = 0;
+
+            const checkYTD = (a) => {
+                if (!a.dateInv) return;
+                const d = new Date(a.dateInv);
+                if (d.getFullYear() === currentYear) {
+                    ytdInvested += (a.invested || (a.quantity * (a.avgPrice || a.unitPrice)) || 0);
+                }
+            };
+
+            (window.mockReservaAssets || []).forEach(checkYTD);
+            (window.mockRendaFixaAssets || []).forEach(checkYTD);
+            (window.mockTesouroAssets || []).forEach(checkYTD);
+            (window.mockRendaVariavelAssets || []).forEach(a => {
+                // RV Logic for YTD
+                if (a.dateInv) {
+                    const d = new Date(a.dateInv);
+                    if (d.getFullYear() === currentYear) {
+                        let inv = a.quantity * a.avgPrice;
+                        if (a.currency === 'USD') inv *= (window.currentUsdRate || 5.0);
+                        ytdInvested += inv;
+                    }
+                }
+            });
+
+            return { totalValue, totalInvested, profit, profitPerc, ytdInvested };
         }
 
         function renderDashboard() {
@@ -3078,7 +3104,7 @@
                 profitEl.classList.add('text-red-600');
             }
 
-            renderGoalCard(metrics.totalValue);
+            renderGoalCard(metrics.ytdInvested);
             renderTopDividendPayers(); // Initial Render
 
             const tbody = document.getElementById('dash-assets-body');
@@ -3226,16 +3252,57 @@
             renderChart(totals);
         }
 
+        // Annual Goal Logic (Year-Based)
+        const currentYearKey = 'annualGoal_' + new Date().getFullYear();
+        window.annualGoal = parseFloat(localStorage.getItem(currentYearKey)) || 0;
+
         function renderGoalCard(currentValue) {
             const container = document.getElementById('goal-card-content');
             if (annualGoal <= 0) {
-                container.innerHTML = `<p class="text-primary-light text-sm font-medium mb-1">Meta Anual</p><div class="flex flex-col items-center justify-center h-20 text-center"><p class="text-white font-bold text-base mb-1 leading-tight">Que tal estabelecer a sua meta?</p><button onclick="openGoalModal()" class="bg-white text-primary px-4 py-1.5 rounded-full text-xs font-bold hover:bg-slate-100 transition-colors">Definir Meta</button></div>`;
+                container.innerHTML = `
+                    <p class="text-primary-light text-sm font-medium mb-1">Meta Anual (${new Date().getFullYear()})</p>
+                    <div class="h-20 flex flex-col items-center justify-center">
+                         <div class="flex items-center gap-2 mb-1">
+                             <p class="text-lg font-bold">R$ 0,00</p>
+                             <button onclick="openGoalModal()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-pen text-xs text-white"></i>
+                             </button>
+                         </div>
+                         <p class="text-xs opacity-75">Defina sua meta para este ano</p>
+                    </div>
+                `;
             } else {
                 const percentage = Math.min(100, (currentValue / annualGoal) * 100);
-                if (percentage >= 100) {
-                    container.innerHTML = `<p class="text-primary-light text-sm font-medium mb-1">Meta Anual</p><div class="h-20 flex flex-col justify-center items-center text-center"><i class="fa-solid fa-trophy text-yellow-300 text-2xl mb-1 scale-up-center"></i><p class="text-white font-bold text-sm leading-tight">Parabéns! Meta Atingida 🎉</p><p class="text-[10px] text-primary-light mt-0.5">Você alcançou ${formatCurrency(annualGoal)}</p></div>`;
+                const isCompleted = currentValue >= annualGoal;
+
+                if (isCompleted) {
+                    container.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-primary-light text-sm font-medium">Meta Anual</p>
+                            <button onclick="openGoalModal()" class="text-primary-light hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
+                        </div>
+                        <div class="h-20 flex flex-col justify-center items-center text-center">
+                             <div class="text-3xl mb-1">🎉</div>
+                             <p class="text-sm font-bold">Parabéns! Meta Atingida!</p>
+                             <p class="text-xs opacity-75">${formatCurrency(currentValue)} / ${formatCurrency(annualGoal)}</p>
+                        </div>
+                    `;
                 } else {
-                    container.innerHTML = `<div class="flex justify-between items-end mb-2"><p class="text-primary-light text-sm font-medium">Meta Anual</p><span class="text-2xl font-bold">${percentage.toFixed(1)}%</span></div><div class="w-full bg-black/20 rounded-full h-2.5 mb-3 overflow-hidden"><div class="bg-white h-2.5 rounded-full transition-all duration-1000 ease-out" style="width: ${percentage}%"></div></div><div class="flex justify-between text-xs text-primary-light"><span>Atual: ${formatCurrency(currentValue)}</span><span>Meta: ${formatCurrency(annualGoal)}</span></div>`;
+                    container.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-primary-light text-sm font-medium">Meta Anual</p>
+                            <button onclick="openGoalModal()" class="text-primary-light hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
+                        </div>
+                        <div class="h-20 flex flex-col justify-center">
+                             <div class="flex justify-between items-end mb-1">
+                                <span class="text-3xl font-bold">${percentage.toFixed(0)}%</span>
+                                <span class="text-xs opacity-75 mb-1.5">${formatCurrency(currentValue)} / ${formatCurrency(annualGoal)}</span>
+                             </div>
+                             <div class="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-white h-full rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                             </div>
+                        </div>
+                    `;
                 }
             }
         }
@@ -3248,13 +3315,15 @@
             if (!validateInputs('goal-modal')) return;
 
             const val = parseFloat(goalInput.value);
-            if (val > 0) {
-                window.firebaseSaveGoal(val);
-                closeGoalModal();
-                showSuccessMessage("Meta definida com sucesso!");
-            } else {
-                alert("Por favor, insira um valor válido.");
-            }
+            if (isNaN(val) || val <= 0) return alert('Valor inválido');
+
+            window.annualGoal = val;
+            const currentYearKey = 'annualGoal_' + new Date().getFullYear();
+            localStorage.setItem(currentYearKey, val);
+
+            renderDashboard(); // Trigger update
+            closeGoalModal();
+            showSuccessMessage('Meta Anual atualizada!');
         };
 
         function renderRebalanceamento() {
@@ -4441,7 +4510,32 @@
                     const maturity = document.getElementById('input-maturity').value;
                     const rate = getFormattedRate();
 
-                    newItem = { id: finalId, dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
+                    // NOTE: Use 'current' (updated value) not just invested
+                    const current = window.parseCurrencyValue(document.getElementById('input-current-val')?.value) || invested;
+
+                    newItem = { id: finalId, dateInv, type, issuer, maturity, invested, current: current, rate: rate, broker: broker, currency: 'BRL', category: context };
+                }
+
+                // --- History Logic (RF/Tesouro) ---
+                if (['renda-fixa', 'tesouro', 'reserva'].includes(context)) {
+                    let existingHistory = [];
+                    if (editId) {
+                        // Find existing to preserve history
+                        const existing = window.mockRendaFixaAssets.find(a => a.id === editId) ||
+                            window.mockTesouroAssets.find(a => a.id === editId) ||
+                            window.mockReservaAssets.find(a => a.id === editId);
+                        if (existing && existing.history) existingHistory = existing.history;
+                    }
+
+                    // Add/Update Today's Entry
+                    const today = new Date().toISOString().split('T')[0];
+                    const val = newItem.current || newItem.invested; // Fallback
+
+                    // Remove entry if already exists for today (overwrite)
+                    existingHistory = existingHistory.filter(h => h.date !== today);
+                    existingHistory.push({ date: today, value: val });
+
+                    newItem.history = existingHistory;
                 }
 
                 console.log(">>> Saving Item:", newItem);
@@ -4849,7 +4943,10 @@
             } else if (currentContext === 'tesouro') assets = window.mockTesouroAssets; else assets = currentContext === 'renda-fixa' ? window.mockRendaFixaAssets : window.mockReservaAssets;
 
             const now = new Date().toISOString(); // Timestamp atual
+            const today = now.split('T')[0];
             const processedTickers = new Set(); // To avoid double-updating if valid inputs are duplicated somehow
+
+            let updatedCount = 0;
 
             inputs.forEach(inp => {
                 if (inp.id === 'usd-rate-input') return;
@@ -4865,10 +4962,18 @@
                     const newVal = window.parseCurrencyValue(inp.value);
                     if (isNaN(newVal)) return;
 
+                    // Check if Changed (Compare with first asset of ticker)
+                    const sampleAsset = assets.find(a => a.ticker === ticker);
+                    const currentPrice = sampleAsset ? sampleAsset.currentPrice : 0;
+
+                    if (Math.abs(newVal - currentPrice) < 0.001) return; // Skip if unchanged
+
                     const matchingAssets = assets.filter(a => a.ticker === ticker);
                     matchingAssets.forEach(asset => {
                         if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(asset.id, { currentPrice: newVal, lastUpdated: now });
                     });
+                    updatedCount++;
+
                 } else if (id) {
                     // Standard ID-based update
                     const asset = assets.find(a => a.id == id);
@@ -4876,15 +4981,34 @@
                         const newVal = window.parseCurrencyValue(inp.value);
                         if (isNaN(newVal)) return;
 
+                        const currentVal = currentContext === 'renda-variavel' ? asset.currentPrice : asset.current;
+
+                        // Change Detection
+                        if (Math.abs(newVal - currentVal) < 0.001) return; // Skip if unchanged
+
+                        const updatePayload = { lastUpdated: now };
                         if (currentContext === 'renda-variavel') {
-                            if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, { currentPrice: newVal, lastUpdated: now });
+                            updatePayload.currentPrice = newVal;
                         } else {
-                            if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, { current: newVal, lastUpdated: now });
+                            updatePayload.current = newVal;
+
+                            // History Logic (RF/Tesouro/Reserva)
+                            let history = asset.history ? [...asset.history] : [];
+                            // Update or Add Today
+                            history = history.filter(h => h.date !== today);
+                            history.push({ date: today, value: newVal });
+                            updatePayload.history = history;
                         }
+
+                        if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, updatePayload);
+                        updatedCount++;
                     }
                 }
             });
-            closeUpdateBalancesModal(); showSuccessMessage("Valores atualizados!");
+            closeUpdateBalancesModal();
+            if (updatedCount > 0) showSuccessMessage(`${updatedCount} ativo(s) atualizado(s)!`);
+            else showSuccessMessage("Nenhum ativo alterado.");
+
             if (currentContext === 'renda-variavel') renderRendaVariavel(); else if (currentContext === 'tesouro') renderTesouro(); else if (currentContext === 'renda-fixa') renderRendaFixa(); else renderReserva();
         };
         window.closeUpdateBalancesModal = () => { updateModal.classList.add('opacity-0'); document.getElementById('update-balances-content').classList.remove('scale-100'); document.getElementById('update-balances-content').classList.add('opacity-0', 'scale-95'); setTimeout(() => updateModal.classList.add('hidden'), 300); };
@@ -7636,21 +7760,218 @@
         setTimeout(() => modal.classList.add('hidden'), 300);
     };
 
-    function updateStat(id, val, perc, currency = 'BRL') {
-        const elVal = document.getElementById(id);
-        const elPerc = document.getElementById(id + '-perc');
+    // --- Renda Fixa Detail Layout ---
+    window.openRFDetailModal = (id) => {
+        // Find asset
+        const asset = window.mockRendaFixaAssets.find(a => a.id === id) ||
+            window.mockTesouroAssets.find(a => a.id === id) ||
+            window.mockReservaAssets.find(a => a.id === id);
 
-        elVal.textContent = (val >= 0 ? '+' : '') + formatCurrency(val, currency);
-        elPerc.textContent = (perc >= 0 ? '+' : '') + perc.toFixed(2) + '%';
+        if (!asset) return;
 
-        if (val >= 0) {
-            elVal.className = "text-2xl font-bold text-emerald-600 dark:text-emerald-400";
-            elPerc.className = "text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded mb-1";
-        } else {
-            elVal.className = "text-2xl font-bold text-red-600 dark:text-red-400";
-            elPerc.className = "text-sm font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded mb-1";
-        }
+        // Populate Headers
+        document.getElementById('rf-detail-issuer').textContent = asset.issuer || asset.name;
+        document.getElementById('rf-detail-type').textContent = asset.type;
+
+        // Populate Stats
+        document.getElementById('rf-detail-maturity').textContent = formatDate(asset.maturity);
+        const days = calculateDays(asset.maturity);
+        const daysEl = document.getElementById('rf-detail-days');
+        daysEl.textContent = days + (days === 1 ? ' dia' : ' dias');
+        daysEl.className = days <= 0 ? 'text-[10px] text-red-500 font-bold mt-1' : 'text-[10px] text-slate-400 mt-1';
+
+        document.getElementById('rf-detail-rate').textContent = asset.rate;
+        document.getElementById('rf-detail-invested').textContent = formatCurrency(asset.invested);
+
+        const currentVal = asset.current;
+        const yieldVal = currentVal - asset.invested;
+        const yieldPerc = asset.invested > 0 ? (yieldVal / asset.invested) * 100 : 0;
+
+        document.getElementById('rf-detail-current').textContent = formatCurrency(currentVal);
+
+        const yieldEl = document.getElementById('rf-detail-yield');
+        yieldEl.textContent = (yieldVal >= 0 ? '+' : '') + yieldPerc.toFixed(2) + '%';
+        yieldEl.className = `text-[10px] font-bold mt-1 ${yieldVal >= 0 ? 'text-emerald-500' : 'text-red-500'}`;
+
+        // Render History
+        renderRFHistory(asset);
+
+        // Show Modal
+        const modal = document.getElementById('rf-detail-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            document.getElementById('rf-detail-content').classList.remove('opacity-0', 'scale-95');
+            document.getElementById('rf-detail-content').classList.add('scale-100');
+        }, 10);
     }
+
+    window.closeRFDetailModal = () => {
+        const modal = document.getElementById('rf-detail-modal');
+        modal.classList.add('opacity-0');
+        document.getElementById('rf-detail-content').classList.remove('scale-100');
+        document.getElementById('rf-detail-content').classList.add('opacity-0', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    window.rfHistoryChart = null;
+    window.renderRFHistory = (asset) => {
+        const history = asset.history || [];
+        const tbody = document.getElementById('rf-history-list');
+        tbody.innerHTML = '';
+
+        // Merge Current State as Latest Point
+        const currentEntry = { date: new Date().toISOString().split('T')[0], value: asset.current };
+        // Sort descending for Table
+        const listData = [currentEntry, ...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Deduplicate
+        const uniqueList = [];
+        const seen = new Set();
+        listData.forEach(item => {
+            if (!seen.has(item.date)) { seen.add(item.date); uniqueList.push(item); }
+        });
+
+        if (uniqueList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-slate-400 text-xs">Sem histórico.</td></tr>`;
+        } else {
+            uniqueList.forEach(item => {
+                const diff = item.value - asset.invested;
+                const perc = asset.invested > 0 ? (diff / asset.invested) * 100 : 0;
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-3 font-bold text-slate-600 dark:text-slate-300 ml-4">${formatDate(item.date)}</td>
+                    <td class="px-6 py-3 text-right font-bold text-slate-700 dark:text-slate-200">${formatCurrency(item.value)}</td>
+                    <td class="px-6 py-3 text-right ${diff >= 0 ? 'text-emerald-500' : 'text-red-500'} font-medium">
+                        ${diff >= 0 ? '+' : ''}${perc.toFixed(2)}%
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render Chart
+        const ctx = document.getElementById('rf-history-chart');
+        if (ctx) {
+            if (window.rfHistoryChart) window.rfHistoryChart.destroy();
+            // Ascending for chart
+            const chartData = [...uniqueList].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            window.rfHistoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => formatDate(d.date)),
+                    datasets: [{
+                        label: 'Valor (R$)',
+                        data: chartData.map(d => d.value),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                    scales: {
+                        y: {
+                            grid: { color: document.documentElement.classList.contains('dark') ? '#334155' : '#f1f5f9' },
+                            ticks: { callback: (val) => formatCurrency(val) }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    };
+
 </script>
+
+<!-- RF Detail Modal -->
+<div id="rf-detail-modal"
+    class="fixed inset-0 bg-slate-900/60 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+    <div id="rf-detail-content"
+        class="bg-white dark:bg-slate-800 w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl flex flex-col transform scale-95 opacity-0 transition-all duration-300">
+        <!-- Header -->
+        <div
+            class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/50 rounded-t-2xl">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span id="rf-detail-type"
+                        class="px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800">CDB</span>
+                    <h2 id="rf-detail-issuer" class="text-2xl font-bold text-slate-800 dark:text-slate-100">Banco XP
+                    </h2>
+                </div>
+            </div>
+            <button onclick="closeRFDetailModal()"
+                class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark text-slate-500 dark:text-slate-400"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div
+                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Vencimento</p>
+                    <p id="rf-detail-maturity" class="font-bold text-slate-800 dark:text-slate-100">01/01/2030</p>
+                    <p id="rf-detail-days" class="text-[10px] text-slate-400 mt-1">1000 dias</p>
+                </div>
+                <div
+                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Taxa Contratada</p>
+                    <p id="rf-detail-rate" class="font-bold text-slate-800 dark:text-slate-100">12%</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Rentabilidade</p>
+                </div>
+                <div
+                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Valor Investido</p>
+                    <p id="rf-detail-invested" class="font-bold text-slate-800 dark:text-slate-100">R$ 1.000,00</p>
+                </div>
+                <div
+                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-700/30 border border-slate-100 dark:border-slate-700">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Valor Atual</p>
+                    <p id="rf-detail-current" class="font-bold text-emerald-600">R$ 1.100,00</p>
+                    <p id="rf-detail-yield" class="text-[10px] text-emerald-500 font-bold mt-1">+10%</p>
+                </div>
+            </div>
+
+            <!-- Yield Chart -->
+            <div
+                class="mb-8 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-6 shadow-sm">
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-4">Evolução do Rendimento</h3>
+                <div class="h-64 w-full">
+                    <canvas id="rf-history-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- History List -->
+            <div>
+                <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-4">Histórico de Valores</h3>
+                <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                    <table class="w-full text-left text-sm">
+                        <thead
+                            class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700">
+                            <tr>
+                                <th class="px-6 py-3">Data</th>
+                                <th class="px-6 py-3 text-right">Valor Atual</th>
+                                <th class="px-6 py-3 text-right">Rentabilidade Acum.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rf-history-list"
+                            class="divide-y divide-slate-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                            <!-- Populated Dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 </html>
