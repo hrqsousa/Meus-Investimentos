@@ -4059,7 +4059,7 @@
                 // We should change it to type="text" OR just set .value = total.toFixed(2) BUT the user complained about "25.00".
                 // The user complained "using dot". So they WANT comma.
                 // So input MUST be type="text".
-                totalEl.value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                totalEl.value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             } else {
                 totalEl.value = '0,00';
             }
@@ -4076,7 +4076,7 @@
 
             const total = (qty * price) + costs;
             const totalEl = document.getElementById('input-total-calc');
-            if (totalEl) totalEl.value = (isNaN(total) ? 0 : total).toFixed(2);
+            if (totalEl) totalEl.value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
         window.openModal = () => {
             const modal = document.getElementById('transaction-modal');
