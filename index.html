@@ -1177,7 +1177,7 @@
 
     <!-- TRANSACTION MODAL (NOVO/EDITAR) -->
     <div id="transaction-modal"
-        class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        class="fixed inset-0 bg-slate-900/60 z-[80] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all scale-95 opacity-0"
             id="modal-content">
             <div
@@ -1212,7 +1212,7 @@
             <div class="p-6 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900 rounded-b-3xl"
                 id="modal-actions"><button onclick="closeModal()"
                     class="px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl font-semibold transition-colors">Cancelar</button><button
-                    onclick="console.log('>>> CLICKED SAVE BUTTON'); saveNewAsset()"
+                    onclick="saveTransaction()"
                     class="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg flex items-center gap-2"><i
                         class="fa-solid fa-check"></i> <span id="modal-save-btn-text">Salvar</span></button></div>
         </div>
@@ -1231,13 +1231,18 @@
                         class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="usd-rate-container"
-                class="hidden px-8 py-4 bg-yellow-50 border-b border-yellow-100 flex items-center justify-between">
-                <div class="flex items-center gap-2 text-yellow-800 font-bold"><i
-                        class="fa-solid fa-dollar-sign bg-yellow-200 w-8 h-8 flex items-center justify-center rounded-full"></i><span>Cotação
-                        Dólar</span></div>
-                <div class="flex items-center gap-2"><span class="text-sm font-bold text-slate-500">R$</span><input
-                        type="number" id="usd-rate-input" step="0.001"
-                        class="w-24 px-3 py-2 rounded-lg border border-yellow-300 font-bold text-right text-slate-800">
+                class="hidden px-8 py-4 bg-yellow-50 dark:bg-yellow-900/10 border-b border-yellow-100 dark:border-yellow-800/30 flex items-center justify-between transition-colors">
+                <div class="flex items-center gap-3 text-yellow-800 dark:text-yellow-400 font-bold">
+                    <div
+                        class="bg-yellow-200 dark:bg-yellow-900/50 w-8 h-8 flex items-center justify-center rounded-full">
+                        <i class="fa-solid fa-dollar-sign text-yellow-700 dark:text-yellow-300"></i>
+                    </div>
+                    <span>Cotação Dólar</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-slate-500 dark:text-slate-400">R$</span>
+                    <input type="text" id="usd-rate-input" inputmode="numeric" oninput="formatCurrencyInput(this)"
+                        class="w-24 px-3 py-2 rounded-lg border border-yellow-300 dark:border-yellow-600 bg-white dark:bg-slate-800 font-bold text-right text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-yellow-400/50 transition-colors">
                 </div>
             </div>
             <div id="update-balances-filters"
@@ -1262,7 +1267,7 @@
     </div>
 
     <div id="success-modal"
-        class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        class="fixed inset-0 bg-slate-900/60 z-[300] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 flex flex-col items-center justify-center transform scale-95 opacity-0"
             id="success-modal-content">
             <div
@@ -1300,7 +1305,8 @@
                             <label
                                 class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quantidade
                                 (<span id="liq-max-qty">0</span>)</label>
-                            <input type="number" id="liq-qty" step="any" oninput="updateLiquidationValues()"
+                            <input type="text" inputmode="decimal" id="liq-qty" placeholder="0,00"
+                                oninput="updateLiquidationValues()"
                                 class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-yellow-400 font-bold text-slate-700">
                         </div>
                         <div>
@@ -1888,11 +1894,18 @@
         window.parseCurrencyValue = (val) => {
             if (!val) return 0;
             if (typeof val === 'number') return val;
-            // Remove tudo que não é dígito ou vírgula (para centavos) ou ponto (se fosse US, mas aqui assumimos BRL input "1.000,00")
-            // Vamos assumir padrão PT-BR: pontos separadores de milhar, vírgula decimal.
-            // Estrategia: remover pontos, substituir virgula por ponto via replace.
-            const clean = val.replace(/\./g, '').replace(',', '.');
-            const floatVal = parseFloat(clean);
+
+            // Strict PT-BR parser: Strip everything except digits, comma, dot, minus
+            let clean = val.toString().replace(/[^\d.,-]/g, '');
+
+            // Handle "Raw Float" case (e.g. "0.5" from DB/Edit Mode): has dot, NO comma.
+            if (clean.includes('.') && !clean.includes(',')) {
+                return parseFloat(clean);
+            }
+
+            // Handle PT-BR (1.000,00) -> Remove dots, replace comma with dot -> 1000.00
+            const finalStr = clean.replace(/\./g, '').replace(',', '.');
+            const floatVal = parseFloat(finalStr);
             return isNaN(floatVal) ? 0 : floatVal;
         };
 
@@ -2642,7 +2655,18 @@
 
             const totalPortfolioWithCaixa = globalTotal + caixaVal;
 
-            const sortedTickers = Object.values(grouped).filter(a => filter === 'all' || a.type === filter).sort((a, b) => a.ticker.localeCompare(b.ticker));
+            const sortedTickers = Object.values(grouped).filter(a => {
+                if (filter === 'all') return true;
+                const type = a.type.toUpperCase();
+                const f = filter.toUpperCase();
+
+                if (f === 'AÇÃO') return ['AÇÃO', 'AÇÕES', 'ACION', 'STOCK', 'BDR'].some(t => type.includes(t));
+                if (f === 'FII') return ['FII', 'REIT'].some(t => type.includes(t));
+                if (f === 'EXTERIOR') return ['EXTERIOR', 'ETF', 'GOLD'].some(t => type.includes(t));
+                if (f === 'CRIPTO') return ['CRIPTO', 'CRYPTO', 'BITCOIN'].some(t => type.includes(t));
+
+                return type === f;
+            }).sort((a, b) => a.ticker.localeCompare(b.ticker));
 
             sortedTickers.forEach((group, index) => {
                 let currentValBRL = group.totalNative; if (group.currency === 'USD') currentValBRL *= currentUsdRate;
@@ -2741,36 +2765,85 @@
                     recClass = "bg-blue-50 text-blue-600 border border-blue-100";
                 }
 
-                // Verifica se deve manter expandido
-                const isExpanded = expandedTickers.has(group.ticker);
-                const iconClassRotate = isExpanded ? 'rotate-90' : '';
-                const childRowClass = isExpanded ? '' : 'hidden';
-                const iconBgClass = isExpanded ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-slate-500'; // Ajuste de cor do ícone
+                // Verifica se deve manter expandido (REMOVED: Expansion logic deprecated in favor of Detail View)
+                // const isExpanded = expandedTickers.has(group.ticker);
+                // const iconClassRotate = isExpanded ? 'rotate-90' : '';
+                // const childRowClass = isExpanded ? '' : 'hidden';
+                // const iconBgClass = isExpanded ? 'bg-blue-100 text-primary' : 'bg-slate-100 text-slate-500'; 
 
                 const currencyBadge = group.currency === 'USD' ? `<span class="ml-2 px-1.5 py-0.5 text-[9px] font-bold bg-yellow-100 text-yellow-700 rounded border border-yellow-200">USD</span>` : '';
-                const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-800 last:border-0 group transition-colors"; tr.id = `group-rv-${index}`;
-                tr.innerHTML = `<td class="px-6 py-4 pl-6"><div class="flex items-center gap-3"><div class="w-6 h-6 rounded flex items-center justify-center transition-transform duration-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 ${iconBgClass} ${iconClassRotate}" onclick="event.stopPropagation(); toggleGroup('rv-${index}')" id="icon-rv-${index}"><i class="fa-solid fa-chevron-right text-xs"></i></div><div class="flex flex-col"><div class="flex items-center"><span class="font-bold text-slate-800 dark:text-slate-100">${group.ticker}</span>${currencyBadge}</div><span class="text-[10px] text-slate-400 uppercase tracking-wider">${group.type}</span></div></div></td><td class="px-6 py-4 text-center"><div class="flex items-center justify-center gap-1 group/edit"><input type="number" value="${assetGoalPerc}" onchange="updateAssetGoal('${group.ticker}', this.value)" class="w-12 text-center bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-500 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200 transition-colors"><span class="text-xs text-slate-400 font-bold">%</span></div></td><td class="px-6 py-4 text-right text-slate-600 dark:text-slate-400">${group.quantity.toFixed(4).replace(/\.?0+$/, '')}</td><td class="px-6 py-4 text-right"><div class="flex flex-col items-end"><span class="text-xs text-slate-400">PM: ${formatCurrency(group.avgPrice, group.currency)}</span><span class="font-bold text-slate-700 dark:text-slate-300">${formatCurrency(group.currentPrice, group.currency)}</span></div></td><td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100">${formatCurrency(currentValBRL, 'BRL')}${group.currency === 'USD' ? `<div class="text-[10px] text-slate-400 font-normal">${formatCurrency(group.totalNative, 'USD')}</div>` : ''}</td><td class="px-6 py-4 text-right"><div class="${profitClass} font-bold text-sm">${profitSign}${formatCurrency(profitBRL, 'BRL')}</div><div class="${percClass} text-xs">${profitSign}${profitPerc.toFixed(2)}%</div></td><td class="px-6 py-4 text-center"><span class="inline-block px-3 py-1 rounded-lg text-xs font-medium ${recClass}">${recText}</span></td><td class="px-6 py-4 text-center pr-6 flex items-center justify-center gap-3"><button onclick="event.stopPropagation(); openInvestModal({ category: 'renda-variavel', type: '${group.type}', ticker: '${group.ticker}', currency: '${group.currency}' })" class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-800/50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-emerald-100 dark:border-emerald-800 flex items-center gap-1"><i class="fa-solid fa-plus"></i> Aportar</button><span class="text-xs text-slate-300 cursor-pointer hover:text-primary transition-colors" onclick="event.stopPropagation(); toggleGroup('rv-${index}')">Expandir</span></td>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors";
+                tr.id = `group-rv-${index}`;
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 pl-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <div class="flex items-center cursor-pointer hover:text-primary transition-colors" onclick="event.stopPropagation(); openRVDetail('${group.ticker}')">
+                                    <span class="font-bold text-slate-800 dark:text-slate-100 text-base">${group.ticker}</span>
+                                    ${currencyBadge}
+                                </div>
+                                <span class="text-[10px] text-slate-400 uppercase tracking-wider">${group.type}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex items-center justify-center gap-1 group/edit">
+                            <input type="number" value="${assetGoalPerc}" onchange="updateAssetGoal('${group.ticker}', this.value)" class="w-12 text-center bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-500 focus:border-primary outline-none font-bold text-slate-700 dark:text-slate-200 transition-colors">
+                            <span class="text-xs text-slate-400 font-bold">%</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right text-slate-600 dark:text-slate-400 font-medium">
+                        ${group.quantity.toFixed(4).replace(/\.?0+$/, '')}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs text-slate-400">PM: ${formatCurrency(group.avgPrice, group.currency)}</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">${formatCurrency(group.currentPrice, group.currency)}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right font-bold text-slate-800 dark:text-slate-100">
+                        ${formatCurrency(currentValBRL, 'BRL')}
+                        ${group.currency === 'USD' ? `<div class="text-[10px] text-slate-400 font-normal">${formatCurrency(group.totalNative, 'USD')}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="${profitClass} font-bold text-sm">${profitSign}${formatCurrency(profitBRL, 'BRL')}</div>
+                        <div class="${percClass} text-xs font-medium bg-slate-100 dark:bg-slate-800/50 rounded px-1.5 py-0.5 inline-block mt-1">${profitSign}${profitPerc.toFixed(2)}%</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        ${recText ? `<span class="inline-block px-3 py-1 rounded-lg text-xs font-medium ${recClass}">${recText}</span>` : ''}
+                    </td>
+                    <td class="px-6 py-4 text-center pr-6">
+                         <button onclick="event.stopPropagation(); openInvestModal({ category: 'renda-variavel', type: '${group.type}', ticker: '${group.ticker}', currency: '${group.currency}' })" class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-800/50 px-4 py-2 rounded-lg text-xs font-bold transition-colors border border-emerald-100 dark:border-emerald-800 flex items-center gap-2 mx-auto shadow-sm">
+                            <i class="fa-solid fa-plus"></i> Aportar
+                         </button>
+                    </td>`;
                 tbody.appendChild(tr);
-
-                group.aportes.sort((a, b) => new Date(a.dateInv) - new Date(b.dateInv)).forEach(item => {
-                    const itemTotal = item.quantity * item.currentPrice; const itemProfit = itemTotal - (item.quantity * item.avgPrice); let itemTotalBRL = itemTotal; if (item.currency === 'USD') { itemTotalBRL *= currentUsdRate; }
-                    const childTr = document.createElement('tr'); childTr.className = `${childRowClass} child-row border-b border-slate-50 dark:border-slate-800 text-sm group-rv-${index}`;
-
-                    // Lógica Visual Item
-                    let itemProfitVal = item.currency === 'USD' ? itemProfit * currentUsdRate : itemProfit;
-                    const itemProfitClass = itemProfitVal >= 0 ? 'text-emerald-600' : 'text-red-600';
-                    const itemSign = itemProfitVal >= 0 ? '+' : '';
-
-                    childTr.innerHTML = `<td class="px-6 py-3 text-slate-500 text-xs pl-12" colspan="2"><i class="fa-regular fa-calendar mr-1"></i> ${formatDate(item.dateInv)} <span class="mx-2">•</span> ${item.broker}</td><td class="px-6 py-3 text-right text-slate-500 text-xs">${item.quantity}</td><td class="px-6 py-3 text-right text-slate-500 text-xs">Pago: ${formatCurrency(item.avgPrice, item.currency)}</td><td class="px-6 py-3 text-right text-slate-600 font-medium text-xs">${formatCurrency(itemTotalBRL, 'BRL')}</td><td class="px-6 py-3 text-right text-xs" colspan="2"></td><td class="px-6 py-3 text-center"><div class="flex items-center justify-center gap-3"><button onclick="openLiquidationModal('${item.id}')" class="text-slate-400 hover:text-emerald-600 p-1" title="Liquidar"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></button><button onclick="openEditModal('${item.id}')" class="text-slate-400 hover:text-blue-600 p-1" title="Editar"><i class="fa-solid fa-pen"></i></button><button onclick="openAssetDeleteModal('${item.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Remover"><i class="fa-solid fa-trash"></i></button></div></td>`;
-                    tbody.appendChild(childTr);
-                });
             });
 
+            // Update Globals
             document.getElementById('rv-total').textContent = formatCurrency(totalEquityBRL);
-            const globalProfit = totalEquityBRL - totalCostBRL; const globalProfitPerc = totalCostBRL > 0 ? (globalProfit / totalCostBRL) * 100 : 0;
-            const pEl = document.getElementById('rv-profit'); const ppEl = document.getElementById('rv-profit-perc');
-            pEl.textContent = (globalProfit >= 0 ? '+' : '') + formatCurrency(globalProfit); ppEl.textContent = (globalProfitPerc >= 0 ? '+' : '') + globalProfitPerc.toFixed(2) + '%';
-            if (globalProfit < 0) { pEl.className = "text-3xl font-bold text-red-600"; ppEl.className = "text-sm font-medium text-red-600 bg-red-50 px-2 rounded"; } else { pEl.className = "text-3xl font-bold text-emerald-600"; ppEl.className = "text-sm font-medium text-emerald-600 bg-emerald-50 px-2 rounded"; }
+            const globalProfit = totalEquityBRL - totalCostBRL;
+            const globalProfitPerc = totalCostBRL > 0 ? (globalProfit / totalCostBRL) * 100 : 0;
+
+            const pEl = document.getElementById('rv-profit');
+            const ppEl = document.getElementById('rv-profit-perc');
+
+            pEl.textContent = (globalProfit >= 0 ? '+' : '') + formatCurrency(globalProfit);
+            ppEl.textContent = (globalProfitPerc >= 0 ? '+' : '') + globalProfitPerc.toFixed(2) + '%';
+
+            if (globalProfit < 0) {
+                pEl.className = "text-3xl font-bold text-red-600";
+                ppEl.className = "text-sm font-medium text-red-600 bg-red-50 px-2 rounded";
+            } else {
+                pEl.className = "text-3xl font-bold text-emerald-600";
+                ppEl.className = "text-sm font-medium text-emerald-600 bg-emerald-50 px-2 rounded";
+            }
         }
 
         window.updateAssetGoal = (ticker, val) => {
@@ -3962,16 +4035,49 @@
 
         const modal = document.getElementById('transaction-modal');
         const modalFields = document.getElementById('modal-fields-container');
-        window.calculateTesouroTotal = () => { const qty = parseFloat(document.getElementById('input-qty')?.value) || 0; const price = parseFloat(document.getElementById('input-unit-price')?.value) || 0; document.getElementById('input-total-calc').value = (qty * price).toFixed(2); };
+
         window.calculateTesouroTotal = () => {
-            const qty = parseFloat(document.getElementById('input-qty')?.value) || 0;
-            const price = parseFloat(document.getElementById('input-unit-price')?.value) || 0;
+            const qtyInput = document.getElementById('input-qty')?.value || '0';
+            const priceInput = document.getElementById('input-unit-price')?.value || '0';
+
+            // Parse formatted inputs (now both are masked)
+            const qty = window.parseCurrencyValue(qtyInput);
+            const price = window.parseCurrencyValue(priceInput);
+
+            console.log("CalcTesouro:", { qtyInput, qty, priceInput, price });
+
             const total = qty * price;
             const totalEl = document.getElementById('input-total-calc');
-            if (totalEl) totalEl.value = total.toFixed(2);
+
+            // Check for valid numbers
+            // Check for valid numbers
+            if (!isNaN(total)) {
+                // Use formatCurrency to get "R$ 250,00" (or just "250,00" if we strip symbol elsewhere, but formatCurrency is safest)
+                // Actually, the input is type="number" readonly... wait.
+                // The input `input-total-calc` is type="number" in HTML?
+                // Let's check. If it is type="number", it cannot accept "R$".
+                // We should change it to type="text" OR just set .value = total.toFixed(2) BUT the user complained about "25.00".
+                // The user complained "using dot". So they WANT comma.
+                // So input MUST be type="text".
+                totalEl.value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            } else {
+                totalEl.value = '0,00';
+            }
         };
 
-        window.calculateRVTotal = () => { const qty = parseFloat(document.getElementById('input-qty')?.value) || 0; const price = parseFloat(document.getElementById('input-buy-price')?.value) || 0; const costs = parseFloat(document.getElementById('input-other-costs')?.value) || 0; document.getElementById('input-total-calc').value = ((qty * price) + costs).toFixed(2); };
+        window.calculateRVTotal = () => {
+            const qtyInput = document.getElementById('input-qty')?.value || '0';
+            const priceInput = document.getElementById('input-buy-price')?.value || '0';
+            const costsInput = document.getElementById('input-other-costs')?.value || '0';
+
+            const qty = window.parseCurrencyValue(qtyInput);
+            const price = window.parseCurrencyValue(priceInput);
+            const costs = window.parseCurrencyValue(costsInput);
+
+            const total = (qty * price) + costs;
+            const totalEl = document.getElementById('input-total-calc');
+            if (totalEl) totalEl.value = (isNaN(total) ? 0 : total).toFixed(2);
+        };
         window.openModal = () => {
             const modal = document.getElementById('transaction-modal');
             const selector = document.getElementById('category-selector');
@@ -4048,7 +4154,7 @@
                 if (editContext === 'renda-variavel') {
                     if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type || 'Ação';
                     if (document.getElementById('input-ticker')) document.getElementById('input-ticker').value = asset.ticker || '';
-                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = asset.quantity || 0;
+                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = (asset.quantity || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     if (document.getElementById('input-buy-price')) document.getElementById('input-buy-price').value = (asset.currentPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     if (document.getElementById('input-other-costs')) document.getElementById('input-other-costs').value = (asset.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     if (document.getElementById('input-currency')) {
@@ -4060,8 +4166,8 @@
                 } else if (editContext === 'tesouro') {
                     if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type || '';
                     if (document.getElementById('input-issuer')) document.getElementById('input-issuer').value = asset.issuer || '';
-                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = asset.quantity || 1;
-                    if (document.getElementById('input-unit-price')) document.getElementById('input-unit-price').value = (asset.unitPrice || asset.invested || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = parseFloat(asset.quantity || 0).toFixed(2).replace('.', ',');
+                    if (document.getElementById('input-unit-price')) document.getElementById('input-unit-price').value = parseFloat(asset.unitPrice || asset.invested || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     if (document.getElementById('input-maturity')) document.getElementById('input-maturity').value = asset.maturity || '';
 
                     if (asset.rate) {
@@ -4072,9 +4178,10 @@
                         else { val = asset.rate.replace('%', ''); }
 
                         if (document.getElementById('input-rate-type')) document.getElementById('input-rate-type').value = type;
-                        if (document.getElementById('input-rate-val')) document.getElementById('input-rate-val').value = parseFloat(val);
+                        if (document.getElementById('input-rate-val')) document.getElementById('input-rate-val').value = window.parseCurrencyValue(val).toFixed(2).replace('.', ',');
                     }
-                    document.getElementById('input-total-calc').value = asset.invested || 0;
+                    if (window.calculateTesouroTotal) window.calculateTesouroTotal();
+
                 } else {
                     if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type || 'CDB';
                     if (document.getElementById('input-issuer')) document.getElementById('input-issuer').value = asset.issuer || '';
@@ -4089,10 +4196,10 @@
                         else { val = asset.rate.replace('%', ''); }
 
                         if (document.getElementById('input-rate-type')) document.getElementById('input-rate-type').value = type;
-                        if (document.getElementById('input-rate-val')) document.getElementById('input-rate-val').value = parseFloat(val);
+                        if (document.getElementById('input-rate-val')) document.getElementById('input-rate-val').value = window.parseCurrencyValue(val).toFixed(2).replace('.', ',');
                     }
                 }
-            }, 50);
+            }, 200);
 
             // Mostra o modal (já feito pelo selectCategory, mas garantindo)
             const modal = document.getElementById('transaction-modal');
@@ -4249,141 +4356,144 @@
 
 
 
-        window.saveNewAsset = async () => {
-            console.log(">>> saveNewAsset Triggered");
-            if (!validateInputs('modal-fields-container')) {
-                console.log(">>> Validation Failed");
-                return;
-            }
+        let isSaving = false;
+        window.saveTransaction = async () => {
+            if (isSaving) return;
+            isSaving = true;
 
-            const context = document.getElementById('modal-context').value;
-            const editId = document.getElementById('edit-asset-id').value;
-            const dateInv = document.getElementById('application-date').value;
-            const broker = document.getElementById('input-broker')?.value || 'Manual';
+            const saveBtn = document.getElementById('modal-save-btn-text')?.parentElement;
 
-            console.log(">>> saveNewAsset Context:", context, "EditID:", editId);
-
-            let newItem = {};
-
-            const getFormattedRate = () => {
-                const rType = document.getElementById('input-rate-type')?.value;
-                const rVal = document.getElementById('input-rate-val')?.value;
-                if (!rType || !rVal) return 'Indexado';
-                if (rType === 'CDI') return `${rVal}% CDI`;
-                if (rType === 'IPCA') return `IPCA + ${rVal}%`;
-                if (rType === 'Selic') return `Selic + ${rVal}%`;
-                if (rType === 'PRE') return `${rVal}%`;
-                return `${rType} ${rVal}%`;
-            };
-
-            // Determine ID: Use existing if editing, otherwise new
-            const finalId = editId ? editId : Date.now().toString();
-
-            if (context === 'renda-variavel') {
-                const type = document.getElementById('input-type').value;
-                const ticker = document.getElementById('input-ticker').value.toUpperCase();
-                const qty = parseFloat(document.getElementById('input-qty').value);
-                const price = window.parseCurrencyValue(document.getElementById('input-buy-price').value);
-                const costs = window.parseCurrencyValue(document.getElementById('input-other-costs')?.value);
-                const currency = document.getElementById('input-currency')?.value || 'BRL';
-
-                if (!ticker || qty <= 0 || price <= 0) return alert("Preencha todos os campos corretamente.");
-
-                const totalSpent = (qty * price) + costs;
-                const avgPriceWithCosts = totalSpent / qty;
-
-                newItem = { id: finalId, dateInv, type, ticker, quantity: qty, avgPrice: avgPriceWithCosts, currentPrice: price, broker: broker, currency, category: 'renda-variavel' };
-
-            } else if (context === 'tesouro') {
-                const type = document.getElementById('input-type').value;
-                const maturity = document.getElementById('input-maturity').value;
-                const year = maturity ? maturity.split('-')[0] : '';
-
-                let displayYear = year;
-                if (type && type.includes('Renda+') && year) {
-                    const y = parseInt(year);
-                    if (!isNaN(y)) displayYear = y - 19;
+            try {
+                // Disable Save Button
+                if (saveBtn) {
+                    saveBtn.classList.add('opacity-50', 'pointer-events-none');
+                    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
                 }
 
-                const issuer = `${type} ${displayYear}`;
-                const qty = parseFloat(document.getElementById('input-qty').value) || 0;
-                const unitPrice = window.parseCurrencyValue(document.getElementById('input-unit-price').value);
-                const invested = window.parseCurrencyValue(document.getElementById('input-total-calc').value);
-                const rate = getFormattedRate();
-                const investedCalc = invested || (qty * unitPrice);
+                console.log(">>> saveTransaction Triggered");
+                if (!validateInputs('modal-fields-container')) return; // Finally block will reset UI
 
-                newItem = { id: finalId, dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
+                const modal = document.getElementById('transaction-modal');
+                const editId = document.getElementById('edit-asset-id').value;
+                let context = document.getElementById('modal-context').value;
+                if (!context) context = window.currentContext;
+                const dateInv = document.getElementById('application-date').value;
+                const broker = document.getElementById('input-broker')?.value || 'Manual';
 
-            } else {
-                // Renda Fixa / Reserva
-                const type = document.getElementById('input-type').value;
-                const issuer = document.getElementById('input-issuer').value;
-                const invested = window.parseCurrencyValue(document.getElementById('input-invested').value);
-                const maturity = document.getElementById('input-maturity').value;
-                const rate = getFormattedRate();
+                console.log(">>> saveNewAsset Context:", context, "EditID:", editId);
 
-                newItem = { id: finalId, dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
-            }
+                let newItem = {};
 
-            console.log(">>> Saving Item:", newItem);
+                const getFormattedRate = () => {
+                    const rType = document.getElementById('input-rate-type')?.value;
+                    const rVal = document.getElementById('input-rate-val')?.value;
+                    if (!rType || !rVal) return 'Indexado';
+                    if (rType === 'CDI') return `${rVal}% CDI`;
+                    if (rType === 'IPCA') return `IPCA + ${rVal}%`;
+                    if (rType === 'Selic') return `Selic + ${rVal}%`;
+                    if (rType === 'PRE') return `${rVal}%`;
+                    return `${rType} ${rVal}%`;
+                };
 
-            if (editId) {
-                // Modo Edição
-                if (window.firebaseUpdateAsset) {
-                    console.log(">>> Calling firebaseUpdateAsset with await...");
-                    await window.firebaseUpdateAsset(editId, newItem);
+                // Determine ID: Use existing if editing, otherwise new
+                const finalId = editId ? editId : Date.now().toString();
 
-                    // Optimistic Update (Logged Mode)
-                    if (window.user) {
-                        let targetArray = null;
-                        if (currentContext === 'renda-variavel') targetArray = window.mockRendaVariavelAssets;
-                        else if (currentContext === 'tesouro') targetArray = window.mockTesouroAssets;
-                        else if (currentContext === 'renda-fixa') targetArray = window.mockRendaFixaAssets;
-                        else targetArray = window.mockReservaAssets;
+                if (context === 'renda-variavel') {
+                    const type = document.getElementById('input-type').value;
+                    const ticker = document.getElementById('input-ticker').value.toUpperCase();
+                    const qty = window.parseCurrencyValue(document.getElementById('input-qty').value);
+                    const price = window.parseCurrencyValue(document.getElementById('input-buy-price').value);
+                    const costs = window.parseCurrencyValue(document.getElementById('input-other-costs')?.value);
+                    const currency = document.getElementById('input-currency')?.value || 'BRL';
 
-                        if (targetArray) {
-                            const idx = targetArray.findIndex(a => a.id == editId);
-                            if (idx !== -1) targetArray[idx] = newItem;
-                        }
+                    if (!ticker || qty <= 0 || price <= 0) return alert("Preencha todos os campos corretamente.");
+
+                    const totalSpent = (qty * price) + costs;
+                    const avgPriceWithCosts = totalSpent / qty;
+
+                    newItem = { id: finalId, dateInv, type, ticker, quantity: qty, avgPrice: avgPriceWithCosts, currentPrice: price, broker: broker, currency, category: 'renda-variavel' };
+
+                } else if (context === 'tesouro') {
+                    const type = document.getElementById('input-type').value;
+                    const maturity = document.getElementById('input-maturity').value;
+                    const year = maturity ? maturity.split('-')[0] : '';
+
+                    let displayYear = year;
+                    if (type && type.includes('Renda+') && year) {
+                        const y = parseInt(year);
+                        if (!isNaN(y)) displayYear = y - 19;
                     }
 
-                    closeModal();
-                    showSuccessMessage("Ativo atualizado!");
+                    const issuer = `${type} ${displayYear}`;
+                    const qty = window.parseCurrencyValue(document.getElementById('input-qty').value) || 0;
+                    const unitPrice = window.parseCurrencyValue(document.getElementById('input-unit-price').value);
+                    const invested = window.parseCurrencyValue(document.getElementById('input-total-calc').value);
+                    const rate = getFormattedRate();
+                    const investedCalc = invested || (qty * unitPrice);
 
-                    // Force UI Update
-                    setTimeout(() => {
-                        if (currentContext === 'renda-variavel') renderRendaVariavel();
-                        else if (currentContext === 'tesouro') renderTesouro();
-                        else if (currentContext === 'renda-fixa') renderRendaFixa();
-                        else if (currentContext === 'reserva') renderReserva();
-                        else if (window.renderDashboard) window.renderDashboard();
-                    }, 50);
+                    newItem = { id: finalId, dateInv, type, issuer, maturity, invested: investedCalc, quantity: qty, unitPrice: unitPrice, current: investedCalc, rate: rate, broker: broker, currency: 'BRL', category: 'tesouro' };
+
+                } else {
+                    // Renda Fixa / Reserva
+                    const type = document.getElementById('input-type').value;
+                    const issuer = document.getElementById('input-issuer').value;
+                    const invested = window.parseCurrencyValue(document.getElementById('input-invested').value);
+                    const maturity = document.getElementById('input-maturity').value;
+                    const rate = getFormattedRate();
+
+                    newItem = { id: finalId, dateInv, type, issuer, maturity, invested, current: invested, rate: rate, broker: broker, currency: 'BRL', category: context };
                 }
-            } else {
-                // Modo Criação
-                if (window.firebaseSaveAsset) {
-                    console.log(">>> Calling firebaseSaveAsset with await...");
-                    await window.firebaseSaveAsset(newItem);
 
-                    // Optimistic Update (Logged Mode)
-                    if (window.user) {
-                        if (newItem.category === 'renda-variavel' || newItem.ticker) window.mockRendaVariavelAssets.push(newItem);
-                        else if (newItem.category === 'tesouro' || (newItem.type && newItem.type.includes('Tesouro'))) window.mockTesouroAssets.push(newItem);
-                        else if (newItem.category === 'renda-fixa') window.mockRendaFixaAssets.push(newItem);
-                        else window.mockReservaAssets.push(newItem);
+                console.log(">>> Saving Item:", newItem);
+
+                if (editId) {
+                    // Modo Edição
+                    if (window.firebaseUpdateAsset) {
+                        console.log(">>> Calling firebaseUpdateAsset with await...");
+                        await window.firebaseUpdateAsset(editId, newItem);
+
+                        // Optimistic Update (Logged Mode)
+                        // Removed Optimistic Update to prevent duplicates/conflicts with Listener
+                        // if (targetArray) { ... }
+
+                        closeModal();
+                        showSuccessMessage("Ativo atualizado!");
+
+                        // Force UI Update
+                        // Force UI Update
+                        setTimeout(() => {
+                            window.refreshUI();
+                        }, 50);
                     }
+                } else {
+                    // Modo Criação
+                    if (window.firebaseSaveAsset) {
+                        console.log(">>> Calling firebaseSaveAsset with await...");
+                        await window.firebaseSaveAsset(newItem);
 
-                    closeModal();
-                    showSuccessMessage("Salvo com sucesso!");
+                        // Optimistic Update (Logged Mode)
+                        // Removed Optimistic Update (window.mock...push) to prevent duplicates with Listener
 
-                    // Force UI Update
-                    setTimeout(() => {
-                        if (currentContext === 'renda-variavel') renderRendaVariavel();
-                        else if (currentContext === 'tesouro') renderTesouro();
-                        else if (currentContext === 'renda-fixa') renderRendaFixa();
-                        else if (currentContext === 'reserva') renderReserva();
-                        else if (window.renderDashboard) window.renderDashboard();
-                    }, 50);
+                        closeModal();
+                        showSuccessMessage("Salvo com sucesso!");
+
+                        // Force UI Update
+                        // Force UI Update
+                        setTimeout(() => {
+                            window.refreshUI();
+                        }, 50);
+                    }
+                }
+
+
+            } catch (err) {
+                console.error(">>> Save Error:", err);
+                alert("Erro ao salvar: " + err.message);
+            } finally {
+                isSaving = false;
+                if (saveBtn) {
+                    saveBtn.classList.remove('opacity-50', 'pointer-events-none');
+                    saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span id="modal-save-btn-text">Salvar</span>';
                 }
             }
         };
@@ -4590,7 +4700,9 @@
 
             if (currentContext === 'renda-variavel') {
                 document.getElementById('usd-rate-container').classList.remove('hidden');
-                document.getElementById('usd-rate-input').value = currentUsdRate;
+                // Format initial USD value with comma
+                const fmtUsd = currentUsdRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('usd-rate-input').value = fmtUsd;
             } else {
                 document.getElementById('usd-rate-container').classList.add('hidden');
             }
@@ -4665,11 +4777,21 @@
                 });
             }
 
+            // GROUPING LOGIC FOR RENDA VARIÁVEL
+            const processedTickers = new Set();
+
             assets.forEach(asset => {
+                // For Renda Variável, we only want to show ONE row per Ticker
+                if (currentContext === 'renda-variavel') {
+                    if (processedTickers.has(asset.ticker)) return;
+                    processedTickers.add(asset.ticker);
+                }
+
                 const label = currentContext === 'renda-variavel' ? asset.ticker : asset.issuer;
                 const currentVal = currentContext === 'renda-variavel' ? asset.currentPrice : asset.current;
+
                 const div = document.createElement('div');
-                div.className = "flex justify-between p-3 bg-slate-50 border rounded-lg items-center transition-all duration-300";
+                div.className = "flex justify-between p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-lg items-center transition-all duration-300 hover:bg-white dark:hover:bg-slate-700/50 shadow-sm";
 
                 // Adiciona identificador para o filtro
                 if (currentContext === 'tesouro') {
@@ -4677,12 +4799,12 @@
                 } else if (currentContext === 'renda-variavel') {
                     div.dataset.type = asset.type;
                 } else if (currentContext === 'renda-fixa') {
-                    div.dataset.type = asset.type; // Also set type for Renda Fixa filtering
+                    div.dataset.type = asset.type;
                 }
 
                 const currencyLabel = asset.currency === 'USD' ? 'US$' : 'R$';
 
-                // Exibir Data do Aporte ou Vencimento para diferenciar
+                // Exibir Data do Aporte ou Vencimento para diferenciar types que não são RV
                 let subInfo = '';
                 if (currentContext === 'tesouro' && asset.dateInv) {
                     const parts = asset.dateInv.split('-');
@@ -4699,14 +4821,15 @@
                 if (asset.lastUpdated) {
                     const d = new Date(asset.lastUpdated);
                     const fmt = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    updateInfo = `<span class="text-[10px] text-emerald-600 block font-medium mt-0.5"><i class="fa-regular fa-clock mr-1"></i>Atualizado: ${fmt}</span>`;
+                    updateInfo = `<span class="text-[10px] text-emerald-600 dark:text-emerald-400 block font-medium mt-0.5"><i class="fa-regular fa-clock mr-1"></i>Atualizado: ${fmt}</span>`;
                 } else {
-                    updateInfo = `<span class="text-[10px] text-slate-300 block font-normal mt-0.5">Sem registro de atualização</span>`;
+                    updateInfo = `<span class="text-[10px] text-slate-300 dark:text-slate-600 block font-normal mt-0.5">Sem registro de atualização</span>`;
                 }
 
+                // Data ID Attribute: use Ticker for RV, ID for others
+                const dataAttr = currentContext === 'renda-variavel' ? `data-ticker="${asset.ticker}"` : `data-id="${asset.id}"`;
 
-
-                div.innerHTML = `<div><p class="font-bold text-sm text-slate-800">${label}</p>${subInfo}${updateInfo}</div><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-400">${currencyLabel}</span><input type="text" inputmode="numeric" oninput="formatCurrencyInput(this)" value="${currentVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" data-id="${asset.id}" class="w-36 p-2 border rounded text-right font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 outline-none transition-all"></div>`;
+                div.innerHTML = `<div><p class="font-bold text-sm text-slate-800 dark:text-slate-100">${label}</p>${subInfo}${updateInfo}</div><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-400 dark:text-slate-500">${currencyLabel}</span><input type="text" inputmode="numeric" oninput="formatCurrencyInput(this)" value="${currentVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}" ${dataAttr} class="w-36 p-2 border dark:border-slate-600 rounded text-right font-bold text-slate-700 dark:text-white bg-white dark:bg-slate-700 focus:ring-2 focus:ring-primary/20 outline-none transition-all"></div>`;
                 updateList.appendChild(div);
             });
             // Re-bind Save on Enter for these new inputs
@@ -4721,26 +4844,43 @@
             let assets = [];
             if (currentContext === 'renda-variavel') {
                 assets = window.mockRendaVariavelAssets;
-                const newUsd = parseFloat(document.getElementById('usd-rate-input').value);
+                const newUsd = window.parseCurrencyValue(document.getElementById('usd-rate-input').value);
                 if (newUsd > 0) currentUsdRate = newUsd;
             } else if (currentContext === 'tesouro') assets = window.mockTesouroAssets; else assets = currentContext === 'renda-fixa' ? window.mockRendaFixaAssets : window.mockReservaAssets;
 
             const now = new Date().toISOString(); // Timestamp atual
+            const processedTickers = new Set(); // To avoid double-updating if valid inputs are duplicated somehow
 
             inputs.forEach(inp => {
                 if (inp.id === 'usd-rate-input') return;
 
-                const id = inp.dataset.id; // IDs do Firebase são strings
-                const asset = assets.find(a => a.id == id);
-                if (asset) {
+                const ticker = inp.dataset.ticker;
+                const id = inp.dataset.id;
+
+                if (ticker && currentContext === 'renda-variavel') {
+                    // Update ALL assets with this ticker
+                    if (processedTickers.has(ticker)) return;
+                    processedTickers.add(ticker);
+
                     const newVal = window.parseCurrencyValue(inp.value);
                     if (isNaN(newVal)) return;
 
-                    // Atualiza o valor E a data de atualização
-                    if (currentContext === 'renda-variavel') {
-                        if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, { currentPrice: newVal, lastUpdated: now });
-                    } else {
-                        if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, { current: newVal, lastUpdated: now });
+                    const matchingAssets = assets.filter(a => a.ticker === ticker);
+                    matchingAssets.forEach(asset => {
+                        if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(asset.id, { currentPrice: newVal, lastUpdated: now });
+                    });
+                } else if (id) {
+                    // Standard ID-based update
+                    const asset = assets.find(a => a.id == id);
+                    if (asset) {
+                        const newVal = window.parseCurrencyValue(inp.value);
+                        if (isNaN(newVal)) return;
+
+                        if (currentContext === 'renda-variavel') {
+                            if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, { currentPrice: newVal, lastUpdated: now });
+                        } else {
+                            if (window.firebaseUpdateAsset) window.firebaseUpdateAsset(id, { current: newVal, lastUpdated: now });
+                        }
                     }
                 }
             });
@@ -4779,7 +4919,8 @@
             const finalInput = document.getElementById('liq-final-value');
 
             if (context === 'renda-variavel') {
-                const qty = parseFloat(document.getElementById('liq-qty').value) || 0;
+                const qtyInput = document.getElementById('liq-qty').value || '0';
+                const qty = parseFloat(qtyInput.replace(',', '.')) || 0;
                 const price = window.parseCurrencyValue(document.getElementById('liq-price').value);
                 const costs = window.parseCurrencyValue(document.getElementById('liq-costs').value);
                 const total = (qty * price) - costs;
@@ -5008,92 +5149,16 @@
                 showSuccessMessage("Ativo excluído!");
 
                 // Update UI based on context (Force Refresh)
+                // Update UI based on context (Force Refresh)
                 setTimeout(() => {
-                    if (currentContext === 'renda-variavel') renderRendaVariavel();
-                    else if (currentContext === 'tesouro') renderTesouro();
-                    else if (currentContext === 'renda-fixa') renderRendaFixa();
-                    else if (currentContext === 'reserva') renderReserva();
-                    else if (window.renderDashboard) window.renderDashboard();
+                    window.refreshUI();
                 }, 50);
             } else {
                 console.error(">>> confirmAssetDelete FAILED: Missing ID or firebaseDeleteAsset function", { id, fn: !!window.firebaseDeleteAsset });
             }
         };
 
-        window.openEditModal = (id) => {
-            let asset;
-            if (currentContext === 'renda-variavel') asset = window.mockRendaVariavelAssets.find(a => a.id == id);
-            else if (currentContext === 'tesouro') asset = window.mockTesouroAssets.find(a => a.id == id);
-            else if (currentContext === 'renda-fixa') asset = window.mockRendaFixaAssets.find(a => a.id == id);
-            else {
-                asset = window.mockReservaAssets.find(a => a.id == id);
-                if (!asset) asset = window.mockTesouroAssets.find(a => a.id == id);
-            }
 
-            if (!asset) return;
-
-            let cat = asset.category;
-            // Correction for mapped categories
-            if (currentContext === 'tesouro') cat = 'tesouro';
-            if (currentContext === 'renda-fixa') cat = 'renda-fixa';
-            if (currentContext === 'reserva') cat = 'reserva';
-
-            selectCategory(cat);
-            window.openModal();
-
-            document.getElementById('edit-asset-id').value = id;
-            const titleEl = document.getElementById('modal-title');
-            if (titleEl) titleEl.textContent = "Editar Ativo";
-            const btnText = document.getElementById('modal-save-btn-text');
-            if (btnText) btnText.textContent = "Atualizar";
-
-            setTimeout(() => {
-                if (cat === 'renda-variavel') {
-                    if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type;
-                    if (document.getElementById('input-ticker')) document.getElementById('input-ticker').value = asset.ticker;
-                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = asset.quantity;
-                    if (document.getElementById('input-buy-price')) document.getElementById('input-buy-price').value = (asset.currentPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                    if (document.getElementById('input-broker')) document.getElementById('input-broker').value = asset.broker || '';
-                    if (document.getElementById('application-date')) document.getElementById('application-date').value = asset.dateInv;
-                } else if (cat === 'tesouro') {
-                    if (document.getElementById('input-issuer')) document.getElementById('input-issuer').value = asset.issuer || 'Tesouro Nacional';
-                    if (document.getElementById('input-maturity')) document.getElementById('input-maturity').value = asset.maturity || '';
-                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = asset.quantity || 0;
-                    if (document.getElementById('input-unit-price')) document.getElementById('input-unit-price').value = (asset.unitPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                    if (document.getElementById('input-broker')) document.getElementById('input-broker').value = asset.broker || '';
-                    if (document.getElementById('application-date')) document.getElementById('application-date').value = asset.dateInv;
-                } else {
-                    if (document.getElementById('input-issuer')) document.getElementById('input-issuer').value = asset.issuer || '';
-                    if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type || 'CDB';
-                    if (document.getElementById('input-invested')) document.getElementById('input-invested').value = (asset.invested || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                    if (document.getElementById('input-broker')) document.getElementById('input-broker').value = asset.broker || '';
-                    if (document.getElementById('application-date')) document.getElementById('application-date').value = asset.dateInv;
-                    if (document.getElementById('input-maturity')) document.getElementById('input-maturity').value = asset.maturity || '';
-                }
-
-                // Parse and populate Rate (Rentabilidade)
-                if (asset.rate && document.getElementById('input-rate-type') && document.getElementById('input-rate-val')) {
-                    const rType = document.getElementById('input-rate-type');
-                    const rVal = document.getElementById('input-rate-val');
-                    // Format examples: "10% CDI", "IPCA + 5%", "Selic + 2%", "12%" (PRE)
-                    if (asset.rate.includes('CDI')) {
-                        rType.value = 'CDI';
-                        rVal.value = parseFloat(asset.rate.replace('% CDI', ''));
-                    } else if (asset.rate.includes('IPCA')) {
-                        rType.value = 'IPCA';
-                        rVal.value = parseFloat(asset.rate.replace('IPCA + ', '').replace('%', ''));
-                    } else if (asset.rate.includes('Selic')) {
-                        rType.value = 'Selic';
-                        rVal.value = parseFloat(asset.rate.replace('Selic + ', '').replace('%', ''));
-                    } else if (asset.rate.includes('%')) {
-                        // PRE - but check options available
-                        // Tesouro has 'Tesouro Prefixado' in type, but rate logic selects 'PRE'
-                        rType.value = 'PRE';
-                        rVal.value = parseFloat(asset.rate.replace('%', ''));
-                    }
-                }
-            }, 100);
-        };
         window.closeLiquidationModal = () => { liqModal.classList.add('opacity-0'); document.getElementById('liquidation-modal-content').classList.remove('scale-100'); document.getElementById('liquidation-modal-content').classList.add('opacity-0', 'scale-95'); setTimeout(() => liqModal.classList.add('hidden'), 300); };
         function showSuccessMessage(msg) { const m = document.getElementById('success-modal'); const c = document.getElementById('success-modal-content'); document.getElementById('success-message').textContent = msg; m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('opacity-0', 'scale-95'); c.classList.add('scale-100'); }, 10); setTimeout(() => { m.classList.add('opacity-0'); c.classList.remove('scale-100'); c.classList.add('opacity-0', 'scale-95'); setTimeout(() => m.classList.add('hidden'), 300); }, 1500); }
 
@@ -5129,14 +5194,24 @@
             }
         };
 
-        // Helper for Masking
-        function attachCurrencyMask(selector) {
+        // Helper for Masking with Callback support avoiding race conditions
+        function attachCurrencyMask(selector, callback) {
             const inputs = document.querySelectorAll(selector);
             inputs.forEach(input => {
                 input.addEventListener('input', (e) => {
                     let value = e.target.value.replace(/\D/g, "");
-                    value = (parseFloat(value) / 100).toFixed(2) + "";
-                    e.target.value = value.replace(".", ",");
+                    if (value === "") {
+                        e.target.value = "";
+                        // If cleared, we still might want to calc
+                        if (callback) callback();
+                        return;
+                    }
+
+                    let num = parseFloat(value) / 100;
+                    e.target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    // Call the calculation logic AFTER the value is safely masked
+                    if (callback) callback();
                 });
             });
         }
@@ -5148,12 +5223,9 @@
             // Render logic...
 
             // Post-render: Attach masks to new inputs
-            setTimeout(() => {
-                attachCurrencyMask('#input-buy-price');
-                attachCurrencyMask('#input-unit-price');
-                attachCurrencyMask('#input-invested');
-                attachCurrencyMask('#input-other-costs');
-            }, 100);
+            // Post-render attachments moved to specific contexts to bind correct callbacks
+            // setTimeout block removed from here
+
 
             if (context === 'renda-variavel') {
                 // Adicionado campo Corretora, input wrappers com moeda dinâmica e placeholder
@@ -5175,13 +5247,13 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quantidade</label>
-                        <input type="number" id="input-qty" step="any" placeholder="0" oninput="calculateRVTotal()" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-qty" placeholder="0,00" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço de Compra</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="text" id="input-buy-price" placeholder="0,00" oninput="calculateRVTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-buy-price" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
@@ -5192,7 +5264,7 @@
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Outros Custos</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="text" id="input-other-costs" placeholder="0,00" oninput="calculateRVTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 text-slate-600 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-other-costs" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 text-slate-600 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
@@ -5211,7 +5283,7 @@
                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Investido (Final)</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="number" id="input-total-calc" readonly class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 bg-slate-50 font-bold text-lg text-slate-500 outline-none">
+                            <input type="text" id="input-total-calc" readonly class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 bg-slate-50 font-bold text-lg text-slate-500 outline-none">
                         </div>
                     </div>`;
 
@@ -5252,6 +5324,14 @@
                         }
                     }
                 };
+
+                // Attach RV Masks
+                setTimeout(() => {
+                    attachCurrencyMask('#input-qty', calculateRVTotal);
+                    attachCurrencyMask('#input-buy-price', calculateRVTotal);
+                    attachCurrencyMask('#input-other-costs', calculateRVTotal);
+                    attachCurrencyMask('#input-rate-val'); // if exists? Context is RV, maybe not needed
+                }, 100);
             } else if (context === 'tesouro') {
                 modalFields.innerHTML = `
                     <div>
@@ -5282,13 +5362,13 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Quantidade</label>
-                            <input type="number" id="input-qty" step="0.01" placeholder="0.00" oninput="calculateTesouroTotal()" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-qty" placeholder="0,00" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Preço Unitário</label>
                             <div class="relative">
                                 <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                                <input type="text" id="input-unit-price" placeholder="0.00" oninput="calculateTesouroTotal()" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
+                                <input type="text" id="input-unit-price" placeholder="0.00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                             </div>
                         </div>
                     </div>
@@ -5300,16 +5380,23 @@
                                 <option value="IPCA">IPCA +</option>
                                 <option value="PRE">Pré</option>
                             </select>
-                            <input type="number" id="input-rate-val" step="0.01" placeholder="0.00" class="w-2/3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-rate-val" placeholder="0,00" class="w-2/3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Investido</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="number" id="input-total-calc" readonly class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold text-lg text-slate-500 dark:text-slate-400 outline-none">
+                            <input type="text" id="input-total-calc" readonly class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold text-lg text-slate-500 dark:text-slate-400 outline-none">
                         </div>
                     </div>`;
+
+                // Attach Tesouro Masks
+                setTimeout(() => {
+                    attachCurrencyMask('#input-qty', calculateTesouroTotal);
+                    attachCurrencyMask('#input-unit-price', calculateTesouroTotal);
+                    attachCurrencyMask('#input-rate-val');
+                }, 100);
             } else {
                 // Adicionado wrappers R$ fixos e placeholder para Reserva/Fixa
                 modalFields.innerHTML = `
@@ -5338,7 +5425,7 @@
                                 <option value="IPCA">IPCA+</option>
                                 <option value="PRE">Pré</option>
                             </select>
-                            <input type="number" id="input-rate-val" step="0.01" placeholder="0.00" class="w-2/3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-rate-val" placeholder="0,00" class="w-2/3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
@@ -5362,6 +5449,15 @@
                             <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Liquidez Diária?</span>
                         </label>
                     </div>`;
+
+                // Attach Fixed/Reserve Masks
+                setTimeout(() => {
+                    attachCurrencyMask('#input-invested');
+                    attachCurrencyMask('#input-rate-val');
+                    // Ensure liquidity check logic remains or is re-added if overwritten
+                    const chk = document.getElementById('liquidity-check');
+                    if (chk) chk.checked = (context === 'reserva');
+                }, 100);
                 setTimeout(() => { const chk = document.getElementById('liquidity-check'); if (chk) chk.checked = (context === 'reserva'); }, 0);
             }
             document.getElementById('application-date').value = new Date().toISOString().split('T')[0];
@@ -6455,6 +6551,266 @@
             }
         });
     </script>
+    <!-- RV Detail Modal -->
+    <div id="rv-detail-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[70] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div id="rv-detail-content"
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all opacity-0 scale-95 mx-4">
+
+            <!-- Header -->
+            <div
+                class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
+                <div class="flex items-center gap-4">
+                    <div id="rv-detail-icon"
+                        class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 text-2xl">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 id="rv-detail-ticker"
+                            class="font-bold text-2xl text-slate-800 dark:text-slate-100 leading-tight">PETR4</h3>
+                        <p id="rv-detail-name" class="text-sm text-slate-500 dark:text-slate-400">Petrobras PN</p>
+                    </div>
+                </div>
+                <button onclick="closeRVDetailModal()"
+                    class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 transition-all flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <!-- Cards -->
+                    <div
+                        class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">
+                            Preço Atual</p>
+                        <p id="rv-detail-price" class="text-xl font-bold text-slate-800 dark:text-slate-100">R$ 0,00</p>
+                    </div>
+                    <div
+                        class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">
+                            Preço Médio</p>
+                        <p id="rv-detail-avg" class="text-xl font-bold text-slate-800 dark:text-slate-100">R$ 0,00</p>
+                    </div>
+                    <div
+                        class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">
+                            Quantidade</p>
+                        <p id="rv-detail-qty" class="text-xl font-bold text-slate-800 dark:text-slate-100">0</p>
+                    </div>
+                    <div
+                        class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">
+                            Investido</p>
+                        <p id="rv-detail-invested" class="text-xl font-bold text-slate-800 dark:text-slate-100">R$ 0,00
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Advanced Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Valuation -->
+                    <div
+                        class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/80 border border-slate-100 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i class="fa-solid fa-arrow-trend-up text-6xl"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">Valorização (Cota)</p>
+                        <div class="flex items-end gap-2">
+                            <span id="rv-detail-return"
+                                class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">R$ 0,00</span>
+                            <span id="rv-detail-return-perc"
+                                class="text-sm font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded mb-1">+0,00%</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Diferença entre Valor Atual e Investido</p>
+                    </div>
+
+                    <!-- Total Return (inc Proventos) -->
+                    <div
+                        class="p-5 rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-indigo-900/10 border border-indigo-100 dark:border-indigo-800/50 shadow-sm relative overflow-hidden group">
+                        <div
+                            class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-indigo-600 dark:text-indigo-400">
+                            <i class="fa-solid fa-sack-dollar text-6xl"></i>
+                        </div>
+                        <p class="text-sm font-bold text-indigo-600 dark:text-indigo-300 mb-2">Retorno Total (+
+                            Proventos)</p>
+                        <div class="flex items-end gap-2">
+                            <span id="rv-detail-total-return"
+                                class="text-2xl font-bold text-indigo-700 dark:text-indigo-300">R$ 0,00</span>
+                            <span id="rv-detail-total-return-perc"
+                                class="text-sm font-bold text-indigo-700 bg-indigo-100 dark:bg-indigo-900/30 px-2 py-0.5 rounded mb-1">+0,00%</span>
+                        </div>
+                        <p class="text-xs text-indigo-400 dark:text-indigo-300/70 mt-2">Valorização + Total Proventos
+                        </p>
+                    </div>
+
+                    <!-- Proventos Stats -->
+                    <div
+                        class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm">
+                        <div class="space-y-4">
+                            <div
+                                class="flex justify-between items-center border-b border-slate-50 dark:border-slate-700 pb-2">
+                                <span class="text-xs font-bold text-slate-500">Total Proventos</span>
+                                <span id="rv-detail-prov-total" class="font-bold text-slate-700 dark:text-slate-200">R$
+                                    0,00</span>
+                            </div>
+                            <div
+                                class="flex justify-between items-center border-b border-slate-50 dark:border-slate-700 pb-2">
+                                <span class="text-xs font-bold text-slate-500">Últimos 12 Meses</span>
+                                <span id="rv-detail-prov-12m" class="font-bold text-emerald-600">R$ 0,00</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-bold text-slate-500">Dividend Yield (12m)</span>
+                                <span id="rv-detail-dy"
+                                    class="font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">0,00%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div>
+                    <h4 class="font-bold text-lg text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Histórico de Aportes
+                    </h4>
+                    <div
+                        class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                        <table class="w-full text-sm text-left">
+                            <thead
+                                class="bg-slate-50 dark:bg-slate-700/50 text-xs text-slate-500 dark:text-slate-400 uppercase font-bold border-b border-slate-200 dark:border-slate-700">
+                                <tr>
+                                    <th class="px-6 py-3">Data</th>
+                                    <th class="px-6 py-3">Tipo</th>
+                                    <th class="px-6 py-3 text-right">Qtd</th>
+                                    <th class="px-6 py-3 text-right">Preço</th>
+                                    <th class="px-6 py-3 text-right">Total</th>
+                                    <th class="px-6 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="rv-detail-history-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                                <!-- Rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    <div id="rv-detail-pagination" class="flex justify-between items-center mt-4 hidden">
+                        <span id="rv-history-page-info"
+                            class="text-xs font-bold text-slate-500 dark:text-slate-400">Página 1 de 1</span>
+                        <div class="flex gap-2">
+                            <button id="rv-history-prev"
+                                class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"><i
+                                    class="fa-solid fa-chevron-left"></i></button>
+                            <button id="rv-history-next"
+                                class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"><i
+                                    class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Actions Footer -->
+            <div
+                class="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl flex gap-3">
+                <button id="btn-rv-liquidate"
+                    class="flex-1 py-3 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-bold transition-all shadow-sm">
+                    <i class="fa-solid fa-hand-holding-dollar mr-2"></i> Liquidar
+                </button>
+                <button id="btn-rv-contribute"
+                    class="flex-[2] py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all">
+                    <i class="fa-solid fa-plus mr-2"></i> Novo Aporte
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import CSV Modal -->
+    <div id="import-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div id="import-modal-content"
+            class="bg-white dark:bg-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl w-[500px] transform transition-all opacity-0 scale-95 p-6 relative">
+            <button onclick="closeImportModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i
+                    class="fa-solid fa-xmark text-xl"></i></button>
+
+            <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 mb-2">Importar Aportes (CSV)</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Importe múltiplos ativos de Renda Variável de uma só vez.
+            </p>
+
+            <div
+                class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800/50 mb-6">
+                <p class="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-2">Formato Obrigatório (CSV):</p>
+                <code
+                    class="text-[10px] text-indigo-600 dark:text-indigo-300 block bg-white dark:bg-slate-900 p-2 rounded border border-indigo-100 dark:border-indigo-800/50">
+                    Data;Tipo;Ticker;Quantidade;Preço;Corretora;Moeda
+                </code>
+                <p class="text-[10px] text-indigo-500 dark:text-indigo-400 mt-2">
+                    Ex: 2023-12-31;Ação;WEGE3;100;40.50;Clear;BRL
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                <label class="block w-full cursor-pointer">
+                    <input type="file" id="import-csv-file" accept=".csv" class="hidden"
+                        onchange="window.handleFileSelect(this)">
+                    <div id="import-drop-zone"
+                        class="w-full border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-8 text-center hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <i class="fa-solid fa-file-csv text-3xl text-slate-400 mb-2"></i>
+                        <p id="import-file-label" class="text-sm text-slate-600 dark:text-slate-400 font-medium">Clique
+                            para selecionar o arquivo CSV</p>
+                    </div>
+                </label>
+
+                <!-- Progress / Status Area -->
+                <div id="import-status-area" class="hidden">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span id="import-status-text"
+                            class="font-bold text-slate-700 dark:text-slate-300">Processando...</span>
+                        <span id="import-status-count" class="text-slate-500">0/0</span>
+                    </div>
+                    <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                        <div id="import-progress-bar" class="bg-primary h-full transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                    <div id="import-error-log"
+                        class="mt-2 max-h-24 overflow-y-auto hidden text-[10px] text-red-500 space-y-1">
+                        <!-- Errors will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button onclick="window.previewImportCSV()" id="btn-import-preview" disabled
+                    class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Simular
+                </button>
+                <button onclick="window.executeImportCSV()" id="btn-import-execute" disabled
+                    class="flex-1 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Importar Saldo
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Import Success Modal -->
+    <div id="import-success-modal"
+        class="fixed inset-0 bg-slate-900/60 z-[110] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
+        <div id="import-success-content"
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-80 transform transition-all opacity-0 scale-95 p-6 text-center">
+            <div
+                class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-check text-primary text-3xl"></i>
+            </div>
+            <h3 class="font-bold text-xl text-slate-800 dark:text-slate-100 mb-2">Sucesso!</h3>
+            <p id="import-success-msg" class="text-slate-500 dark:text-slate-400 text-sm mb-6">A importação foi
+                concluída corretamente.</p>
+            <button onclick="window.closeImportSuccessModal()"
+                class="w-full py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold transition-colors">
+                Concluir
+            </button>
+        </div>
+    </div>
     <!-- Settings Modal -->
     <div id="settings-modal"
         class="fixed inset-0 bg-slate-900/60 z-[90] hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0">
@@ -6515,6 +6871,10 @@
             </div>
 
             <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                <button onclick="window.openImportModal()"
+                    class="w-full py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 dark:text-emerald-400 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+                    <i class="fa-solid fa-file-import"></i> Importar Planilha (CSV)
+                </button>
                 <button onclick="window.migrateAncientData()" id="btn-migrate-data"
                     class="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 dark:text-indigo-300 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
                     <i class="fa-solid fa-cloud-arrow-up"></i> Migrar Dados Antigos
@@ -6710,6 +7070,315 @@
         if (window.renderDashboard && window.currentContext === 'dashboard') window.renderDashboard();
     };
 
+    window.refreshUI = () => {
+        console.log(">>> refreshUI Triggered. Context:", window.currentContext, "Ticker:", window.currentRVTicker);
+
+        // 1. Refresh Background Views
+        if (window.currentContext === 'renda-variavel') {
+            if (window.renderRendaVariavel) window.renderRendaVariavel();
+        }
+        else if (window.currentContext === 'tesouro') { if (window.renderTesouro) window.renderTesouro(); }
+        else if (window.currentContext === 'renda-fixa') { if (window.renderRendaFixa) window.renderRendaFixa(); }
+        else if (window.currentContext === 'reserva') { if (window.renderReserva) renderReserva(); }
+        else if (window.renderDashboard) window.renderDashboard();
+
+        // 2. Refresh RV Detail Modal if Open
+        const detailModal = document.getElementById('rv-detail-modal');
+        const isHidden = detailModal ? detailModal.classList.contains('hidden') : true;
+        console.log(">>> RV Detail Modal Status:", { exists: !!detailModal, hidden: isHidden, ticker: window.currentRVTicker });
+
+        if (detailModal && !isHidden && window.currentRVTicker) {
+            console.log(">>> Re-opening RV Detail for:", window.currentRVTicker);
+            // Re-open detail to refresh data
+            const contributions = window.mockRendaVariavelAssets.filter(a => a.ticker === window.currentRVTicker);
+            const history = (window.liquidationHistory || []).filter(h => h.ticker === window.currentRVTicker);
+
+            if (contributions.length === 0 && history.length === 0) {
+                console.log(">>> Asset fully deleted. Closing detail.");
+                if (window.closeRVDetailModal) window.closeRVDetailModal();
+            } else {
+                if (window.openRVDetail) window.openRVDetail(window.currentRVTicker);
+            }
+        }
+    };
+
+    // --- CSV Import Logic ---
+    window.csvImportData = [];
+    window.isImporting = false;
+
+    window.openImportModal = () => {
+        const modal = document.getElementById('import-modal');
+        document.getElementById('import-csv-file').value = '';
+        document.getElementById('import-file-label').textContent = 'Clique para selecionar o arquivo CSV';
+        document.getElementById('import-status-area').classList.add('hidden');
+        document.getElementById('import-error-log').innerHTML = '';
+        document.getElementById('btn-import-preview').disabled = true;
+        document.getElementById('btn-import-execute').disabled = true;
+        window.csvImportData = [];
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            document.getElementById('import-modal-content').classList.remove('opacity-0', 'scale-95');
+        }, 10);
+    };
+
+    window.closeImportModal = () => {
+        const modal = document.getElementById('import-modal');
+        document.getElementById('import-modal-content').classList.add('opacity-0', 'scale-95');
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    window.handleFileSelect = (input) => {
+        const file = input.files[0];
+        if (file) {
+            document.getElementById('import-file-label').textContent = file.name;
+            document.getElementById('btn-import-preview').disabled = false;
+            document.getElementById('import-status-area').classList.add('hidden');
+        }
+    };
+
+    window.parseCSV = (text) => {
+        const lines = text.split(/\r\n|\n/);
+        const result = [];
+        const errors = [];
+
+        let startIndex = 0;
+        // Robust Header Detection: Check if first line contains "ticker" or "data" (case insensitive)
+        // OR if the 'quantity' column in the firstRow is NOT a number.
+        if (lines[0]) {
+            const low = lines[0].toLowerCase();
+            if (low.includes('data') || low.includes('ticker') || low.includes('preço') || low.includes('qtd')) {
+                startIndex = 1;
+            }
+        }
+
+        for (let i = startIndex; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            let parts = [];
+            // Check for semi-colon first (usually safe from decimal commas)
+            if (line.includes(';')) {
+                parts = line.split(';');
+            } else {
+                // Regex pattern for CSV with quotes: matches quoted string OR non-comma sequence
+                // Ref: StackOverflow standard regex for CSV matching
+                const regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*|(?:\n|$))/g;
+                // This is complex. Let's use a simpler state-machine approach or a simpler regex match for this specific use case.
+
+                // Simpler Regex matching comma delimiter but ignoring inside quotes
+                const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                if (matches) {
+                    parts = matches.map(m => m.replace(/^"|"$/g, '').trim()); // Remove quotes
+                } else {
+                    parts = line.split(','); // Fallback
+                }
+
+                // If the regex missed empty columns (e.g. ,,), fallback to a better split function?
+                // Let's implement a mini-parser for safety.
+                parts = [];
+                let curr = '';
+                let quote = false;
+                for (let j = 0; j < line.length; j++) {
+                    let char = line[j];
+                    if (char === '"') { quote = !quote; continue; }
+                    if (char === ',' && !quote) {
+                        parts.push(curr); curr = '';
+                    } else {
+                        curr += char;
+                    }
+                }
+                parts.push(curr);
+            }
+
+            if (parts.length < 7) {
+                errors.push(`Linha ${i + 1}: Formato inválido (${parts.length} colunas encontradas, 7 esperadas)`);
+                continue;
+            }
+
+            const [dateRaw, typeRaw, tickerRaw, qtyRaw, priceRaw, brokerRaw, currencyRaw] = parts;
+
+            const warnings = [];
+
+            // 1. Data Validation
+            let dateInv = dateRaw.trim();
+            if (dateInv.includes('/')) {
+                const dParts = dateInv.split('/');
+                if (dParts.length === 3) dateInv = `${dParts[2]}-${dParts[1]}-${dParts[0]}`;
+            }
+            if (isNaN(new Date(dateInv).getTime())) warnings.push("Data inválida");
+
+            // 2. Numeric Validation
+            let qty = 0;
+            let price = 0;
+
+            try {
+                qty = parseFloat(qtyRaw.replace(',', '.'));
+                price = parseFloat(priceRaw.replace(',', '.'));
+            } catch (e) { }
+
+            if (isNaN(qty) || qty <= 0) warnings.push(`Quantidade inválida (Valor: "${qtyRaw}")`);
+            if (isNaN(price) || price < 0) warnings.push(`Preço inválido (Valor: "${priceRaw}")`);
+
+            // 3. Currency Normalization
+            const currency = (currencyRaw || '').trim().toUpperCase();
+            if (currency !== 'BRL' && currency !== 'USD') warnings.push(`Moeda deve ser BRL ou USD (Valor: "${currencyRaw}")`);
+
+            if (warnings.length > 0) {
+                // Add explicit column count debug to help user
+                errors.push(`Linha ${i + 1}: ${warnings.join(', ')} [Lido: ${parts.length} colunas]`);
+            } else {
+                result.push({
+                    dateInv,
+                    type: typeRaw.trim(),
+                    ticker: tickerRaw.trim().toUpperCase(),
+                    quantity: qty,
+                    avgPrice: price,
+                    currentPrice: price,
+                    broker: brokerRaw.trim(),
+                    currency
+                });
+            }
+        }
+        return { result, errors };
+    };
+
+    window.previewImportCSV = () => {
+        const fileInput = document.getElementById('import-csv-file');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const { result, errors } = window.parseCSV(text);
+            window.csvImportData = result;
+
+            const statusArea = document.getElementById('import-status-area');
+            const statusText = document.getElementById('import-status-text');
+            const log = document.getElementById('import-error-log');
+            const btnExec = document.getElementById('btn-import-execute');
+
+            statusArea.classList.remove('hidden');
+            log.innerHTML = '';
+
+            if (errors.length > 0) {
+                statusText.textContent = `Atenção: ${errors.length} erros. Corrija para importar.`;
+                statusText.className = "font-bold text-red-500";
+                log.classList.remove('hidden');
+                log.innerHTML = errors.map(e => `<div>• ${e}</div>`).join('');
+                btnExec.disabled = true;
+            } else {
+                statusText.textContent = `Sucesso! ${result.length} ativos válidos encontrados.`;
+                statusText.className = "font-bold text-emerald-600";
+                log.classList.add('hidden');
+                btnExec.disabled = false;
+            }
+
+            if (result.length === 0 && errors.length === 0) {
+                statusText.textContent = "Arquivo vazio ou sem dados válidos.";
+                statusText.className = "font-bold text-slate-500";
+                btnExec.disabled = true;
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    window.executeImportCSV = async () => {
+        if (window.isImporting || window.csvImportData.length === 0) return;
+        window.isImporting = true;
+
+        const btn = document.getElementById('btn-import-execute');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Importando...';
+        btn.disabled = true;
+
+        const total = window.csvImportData.length;
+        const progressBar = document.getElementById('import-progress-bar');
+        const countDisplay = document.getElementById('import-status-count');
+
+        let savedCount = 0;
+
+        for (let i = 0; i < total; i++) {
+            const item = window.csvImportData[i];
+
+            let normalizedType = item.type;
+            const tUpper = normalizedType.toUpperCase().trim();
+            if (['AÇÃO', 'AÇÕES', 'ACOES', 'ACAO', 'STOCK', 'STOCKS', 'BDR'].some(x => tUpper.includes(x))) normalizedType = 'Ação';
+            else if (['FII', 'FIIS', 'REIT', 'REITS'].some(x => tUpper.includes(x))) normalizedType = 'FII';
+            else if (['ETF', 'EXTERIOR', 'GOLD', 'SILVER', 'TREASURY'].some(x => tUpper.includes(x))) normalizedType = 'Exterior';
+            else if (['CRIPTO', 'CRYPTO', 'BITCOIN', 'BTC', 'ETH'].some(x => tUpper.includes(x))) normalizedType = 'Cripto';
+
+            const newAsset = {
+                category: 'renda-variavel',
+                type: normalizedType,
+                ticker: item.ticker,
+                quantity: item.quantity,
+                avgPrice: item.avgPrice,
+                currentPrice: item.currentPrice,
+                currency: item.currency,
+                broker: item.broker,
+                dateInv: item.dateInv,
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5)
+            };
+
+            try {
+                if (window.firebaseSaveAsset) {
+                    await window.firebaseSaveAsset(newAsset);
+                } else {
+                    // Fallback Local
+                    window.mockRendaVariavelAssets.push(newAsset);
+                }
+            } catch (e) {
+                console.error("Import Error", e);
+            }
+
+            savedCount++;
+            const pct = Math.round((savedCount / total) * 100);
+            progressBar.style.width = `${pct}%`;
+            countDisplay.textContent = `${savedCount}/${total}`;
+
+            await new Promise(r => setTimeout(r, 50));
+        }
+
+        setTimeout(() => {
+            // alert("Importação concluída com sucesso!");
+            window.openImportSuccessModal(savedCount);
+            window.closeImportModal();
+
+            // Refresh UI
+            if (window.renderRendaVariavel) window.renderRendaVariavel();
+            if (window.renderDashboard) window.renderDashboard();
+
+            window.isImporting = false;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 500);
+    };
+
+    window.openImportSuccessModal = (count) => {
+        const modal = document.getElementById('import-success-modal');
+        const msg = document.getElementById('import-success-msg');
+        if (msg) msg.textContent = `${count} ativos foram importados com sucesso!`;
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            document.getElementById('import-success-content').classList.remove('opacity-0', 'scale-95');
+            document.getElementById('import-success-content').classList.add('scale-100');
+        }, 10);
+    };
+
+    window.closeImportSuccessModal = () => {
+        const modal = document.getElementById('import-success-modal');
+        modal.classList.add('opacity-0');
+        document.getElementById('import-success-content').classList.remove('scale-100');
+        document.getElementById('import-success-content').classList.add('opacity-0', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
     // Initialize Theme
     (function () {
         const theme = localStorage.getItem('theme');
@@ -6724,6 +7393,264 @@
         const chk = document.getElementById('setting-dark-mode-check');
         if (chk) chk.checked = isDark;
     })();
+    // --- RV Detail Modal Logic ---
+    window.currentRVTicker = null;
+    window.rvHistoryPage = 1;
+
+    window.openRVDetail = (ticker) => {
+        if (!ticker) return;
+        window.currentRVTicker = ticker;
+        window.rvHistoryPage = 1;
+
+        const modal = document.getElementById('rv-detail-modal');
+
+        // 1. Filter Assets (Contributions) & History
+        const contributions = window.mockRendaVariavelAssets.filter(a => a.ticker === ticker);
+        const history = (window.liquidationHistory || []).filter(h => h.ticker === ticker);
+
+        const hasActive = contributions.length > 0;
+        const hasHistory = history.length > 0;
+
+        if (!hasActive && !hasHistory) return alert("Erro: Ativo não encontrado (sem saldo ou histórico).");
+
+        // Define Representative Asset (prefer active, else latest history)
+        let activeAsset = hasActive ? contributions[0] : history.sort((a, b) => new Date(b.liquidationDate) - new Date(a.liquidationDate))[0];
+
+        // Normalize fields from history if needed
+        const isUSD = (activeAsset.currency || activeAsset.assetCurrency) === 'USD';
+        const type = activeAsset.type || activeAsset.category;
+
+        // 2. Aggregate Metrics (Active Only)
+        let totalQty = 0;
+        let totalInvestedNative = 0;
+
+        if (hasActive) {
+            totalQty = contributions.reduce((acc, c) => acc + c.quantity, 0);
+            totalInvestedNative = contributions.reduce((acc, c) => acc + (c.quantity * c.avgPrice), 0);
+        }
+
+        const currentPrice = hasActive ? (activeAsset.currentPrice || 0) : (activeAsset.unitPrice || 0);
+
+        // Valuation Logic (BRL)
+        let currentTotalBRL = 0;
+        let investedBRL = 0;
+
+        if (hasActive) {
+            const currentTotalNative = totalQty * currentPrice;
+            const avgPrice = totalQty > 0 ? totalInvestedNative / totalQty : 0;
+
+            investedBRL = totalInvestedNative;
+            currentTotalBRL = currentTotalNative;
+
+            if (isUSD) {
+                currentTotalBRL *= (window.currentUsdRate || 5.0);
+                investedBRL *= (window.currentUsdRate || 5.0);
+            }
+
+            document.getElementById('rv-detail-avg').textContent = formatCurrency(avgPrice, isUSD ? 'USD' : 'BRL');
+        } else {
+            document.getElementById('rv-detail-avg').textContent = "-";
+        }
+
+        const returnVal = currentTotalBRL - investedBRL;
+        const returnPerc = investedBRL > 0 ? (returnVal / investedBRL) * 100 : 0;
+
+        // 3. Proventos Logic
+        const provs = window.proventos ? window.proventos.filter(p => p.asset === ticker) : [];
+        let totalProvs = 0;
+        let provs12m = 0;
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        provs.forEach(p => {
+            let val = p.value;
+            if (p.currency === 'USD') {
+                if (p.exchangeRate) val *= p.exchangeRate;
+                else val *= (window.currentUsdRate || 5.0);
+            }
+            totalProvs += val;
+
+            const pDate = new Date(p.date);
+            if (pDate >= oneYearAgo) provs12m += val;
+        });
+
+        // DY 12m (vs Current Total Value in BRL)
+        const dy = currentTotalBRL > 0 ? (provs12m / currentTotalBRL) * 100 : 0;
+
+        // Total Return (Valuation + Proventos)
+        const totalReturn = returnVal + totalProvs;
+        const totalReturnPerc = investedBRL > 0 ? (totalReturn / investedBRL) * 100 : 0;
+
+        // 4. Fill UI
+        document.getElementById('rv-detail-ticker').textContent = ticker;
+        document.getElementById('rv-detail-name').textContent = type + (activeAsset.broker ? ` • ${activeAsset.broker}` : '');
+
+        // Icon
+        const iconDiv = document.getElementById('rv-detail-icon');
+        let iconClass = 'fa-chart-line';
+        if (type === 'FII' || (type && type.includes('FII'))) iconClass = 'fa-building';
+        else if (type === 'Cripto') iconClass = 'fa-bitcoin-sign';
+        else if (['Exterior', 'Stock', 'REIT'].includes(type)) iconClass = 'fa-globe';
+        iconDiv.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+        // Cards
+        document.getElementById('rv-detail-price').textContent = hasActive ? formatCurrency(currentPrice, isUSD ? 'USD' : 'BRL') : "-";
+        document.getElementById('rv-detail-qty').textContent = totalQty.toFixed(4).replace(/\.?0+$/, '');
+        document.getElementById('rv-detail-invested').textContent = formatCurrency(investedBRL, 'BRL');
+
+        // Advanced Stats
+        updateStat('rv-detail-return', returnVal, returnPerc, 'BRL');
+        updateStat('rv-detail-total-return', totalReturn, totalReturnPerc, 'BRL');
+
+        document.getElementById('rv-detail-prov-total').textContent = formatCurrency(totalProvs);
+        document.getElementById('rv-detail-prov-12m').textContent = formatCurrency(provs12m);
+        document.getElementById('rv-detail-dy').textContent = dy.toFixed(2) + '%';
+
+        // 5. Setup Action Buttons
+        const btnContribute = document.getElementById('btn-rv-contribute');
+        btnContribute.onclick = () => {
+            closeRVDetailModal();
+            openInvestModal({ category: 'renda-variavel', type: type, ticker: ticker, currency: isUSD ? 'USD' : 'BRL' });
+        };
+
+        const btnLiquidate = document.getElementById('btn-rv-liquidate');
+        if (hasActive) {
+            btnLiquidate.classList.remove('hidden');
+            btnLiquidate.onclick = () => {
+                closeRVDetailModal();
+                openLiquidationModal(contributions[0].id);
+            };
+        } else {
+            btnLiquidate.classList.add('hidden');
+        }
+
+        // 6. Render History
+        renderRVHistory(ticker);
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            document.getElementById('rv-detail-content').classList.remove('opacity-0', 'scale-95');
+            document.getElementById('rv-detail-content').classList.add('scale-100');
+        }, 10);
+    };
+
+    window.renderRVHistory = (ticker) => {
+        const tbody = document.getElementById('rv-detail-history-body');
+        tbody.innerHTML = '';
+
+        // Collect Active Contributions
+        const active = window.mockRendaVariavelAssets
+            .filter(a => a.ticker === ticker)
+            .map(a => ({ ...a, status: 'Ativo', displayDate: a.dateInv }));
+
+        // Collect Liquidations (History)
+        const history = (window.liquidationHistory || [])
+            .filter(h => h.ticker === ticker)
+            .map(h => ({ ...h, status: 'Venda ' + (h.liquidationType || ''), displayDate: h.liquidationDate, isSell: true }));
+
+        // Merge and Sort
+        const allItems = [...active, ...history].sort((a, b) => new Date(b.displayDate) - new Date(a.displayDate));
+
+        // Pagination
+        const page = window.rvHistoryPage;
+        const perPage = 5;
+        const totalPages = Math.ceil(allItems.length / perPage) || 1;
+        const start = (page - 1) * perPage;
+        const pagedItems = allItems.slice(start, start + perPage);
+
+        if (pagedItems.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-slate-400 text-xs">Sem histórico.</td></tr>`;
+        } else {
+            pagedItems.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group";
+
+                const isSell = item.isSell;
+                const colorClass = isSell ? 'text-red-500' : 'text-emerald-500';
+                const icon = isSell ? '<i class="fa-solid fa-arrow-trend-down mr-1"></i>' : '<i class="fa-solid fa-arrow-trend-up mr-1"></i>';
+                const typeLabel = isSell ? item.status : 'Compra';
+
+                const price = item.isSell ? item.unitPrice : item.avgPrice;
+                const totalNative = item.quantity * price;
+
+                // Action Buttons for Active Contributions (Always Visible)
+                const actions = !isSell ? `
+                    <div class="flex items-center justify-end gap-2">
+                        <button onclick="openEditModal('${item.id}')" class="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800 flex items-center justify-center transition-colors" title="Editar">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="openAssetDeleteModal('${item.id}')" class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-800 flex items-center justify-center transition-colors" title="Remover">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                ` : '';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-3 font-medium text-slate-600 dark:text-slate-300 relative">
+                        ${formatDate(item.displayDate)}
+                    </td>
+                    <td class="px-6 py-3 font-bold ${colorClass} text-xs uppercase">${icon} ${typeLabel}</td>
+                    <td class="px-6 py-3 text-right text-slate-600 dark:text-slate-400">${item.quantity}</td>
+                    <td class="px-6 py-3 text-right text-slate-600 dark:text-slate-400">${formatCurrency(price, item.currency)}</td>
+                    <td class="px-6 py-3 text-right font-bold text-slate-700 dark:text-slate-200">${formatCurrency(totalNative, item.currency)}</td>
+                    <td class="px-6 py-3 text-right">
+                        ${actions}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update Pagination UI
+        const pagDiv = document.getElementById('rv-detail-pagination');
+        if (allItems.length > perPage) {
+            pagDiv.classList.remove('hidden');
+            document.getElementById('rv-history-page-info').textContent = `Página ${page} de ${totalPages}`;
+
+            // Adjust colspan if needed in "No History" message (it was 5, now 6)
+            // But checking previous block...
+            // "tbody.innerHTML = `<tr><td colspan="5"..." needs update too?
+            // Yes, let's update it in next partial edit or check context. 
+            // In line 7461 (original) it says colspan="5".
+
+
+            const btnPrev = document.getElementById('rv-history-prev');
+            const btnNext = document.getElementById('rv-history-next');
+
+            btnPrev.disabled = page === 1;
+            btnNext.disabled = page >= totalPages;
+
+            btnPrev.onclick = () => { window.rvHistoryPage--; renderRVHistory(ticker); };
+            btnNext.onclick = () => { window.rvHistoryPage++; renderRVHistory(ticker); };
+        } else {
+            pagDiv.classList.add('hidden');
+        }
+    };
+
+    window.closeRVDetailModal = () => {
+        const modal = document.getElementById('rv-detail-modal');
+        modal.classList.add('opacity-0');
+        document.getElementById('rv-detail-content').classList.remove('scale-100');
+        document.getElementById('rv-detail-content').classList.add('opacity-0', 'scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    };
+
+    function updateStat(id, val, perc, currency = 'BRL') {
+        const elVal = document.getElementById(id);
+        const elPerc = document.getElementById(id + '-perc');
+
+        elVal.textContent = (val >= 0 ? '+' : '') + formatCurrency(val, currency);
+        elPerc.textContent = (perc >= 0 ? '+' : '') + perc.toFixed(2) + '%';
+
+        if (val >= 0) {
+            elVal.className = "text-2xl font-bold text-emerald-600 dark:text-emerald-400";
+            elPerc.className = "text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded mb-1";
+        } else {
+            elVal.className = "text-2xl font-bold text-red-600 dark:text-red-400";
+            elPerc.className = "text-sm font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded mb-1";
+        }
+    }
 </script>
 
 </html>
