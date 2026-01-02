@@ -3104,7 +3104,7 @@
                 profitEl.classList.add('text-red-600');
             }
 
-            renderGoalCard(metrics.ytdInvested);
+            renderGoalCard(metrics.totalValue);
             renderTopDividendPayers(); // Initial Render
 
             const tbody = document.getElementById('dash-assets-body');
@@ -3262,13 +3262,13 @@
                 container.innerHTML = `
                     <p class="text-primary-light text-sm font-medium mb-1">Meta Anual (${new Date().getFullYear()})</p>
                     <div class="h-20 flex flex-col items-center justify-center">
-                         <div class="flex items-center gap-2 mb-1">
-                             <p class="text-lg font-bold">R$ 0,00</p>
-                             <button onclick="openGoalModal()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                        <div class="flex items-center gap-2 mb-1">
+                            <p class="text-lg font-bold">R$ 0,00</p>
+                            <button onclick="openGoalModal()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
                                 <i class="fa-solid fa-pen text-xs text-white"></i>
-                             </button>
-                         </div>
-                         <p class="text-xs opacity-75">Defina sua meta para este ano</p>
+                            </button>
+                        </div>
+                        <p class="text-xs opacity-75">Defina sua meta para este ano</p>
                     </div>
                 `;
             } else {
@@ -3295,8 +3295,8 @@
                         </div>
                         <div class="h-20 flex flex-col justify-center">
                              <div class="flex justify-between items-end mb-1">
-                                <span class="text-3xl font-bold">${percentage.toFixed(0)}%</span>
-                                <span class="text-xs opacity-75 mb-1.5">${formatCurrency(currentValue)} / ${formatCurrency(annualGoal)}</span>
+                                <span class="text-2xl font-bold">${percentage.toFixed(0)}%</span>
+                                <span class="text-xs opacity-75 mb-1">${formatCurrency(currentValue)} / ${formatCurrency(annualGoal)}</span>
                              </div>
                              <div class="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
                                 <div class="bg-white h-full rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
@@ -5356,7 +5356,7 @@
                 // E o evento onchange="autoSelectCurrency()" no select de Categoria
                 modalFields.innerHTML = `
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Categoria</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Categoria</label>
                         <select id="input-type" onchange="autoSelectCurrency()" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                             <option value="Ação">Ação</option>
                             <option value="FII">FII</option>
@@ -5365,49 +5365,49 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ticker</label>
-                        <input type="text" id="input-ticker" list="invest-tickers-list" placeholder="Ex: PETR4" oninput="window.autoSelectRVCategory(this.value)" class="w-full px-4 py-3 rounded-xl border border-slate-200 uppercase outline-none focus:border-primary transition-colors">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ticker</label>
+                        <input type="text" id="input-ticker" list="invest-tickers-list" placeholder="Ex: PETR4" oninput="window.autoSelectRVCategory(this.value)" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 uppercase outline-none focus:border-primary transition-colors">
                         <datalist id="invest-tickers-list"></datalist>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quantidade</label>
-                            <input type="text" id="input-qty" placeholder="0,00" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Quantidade</label>
+                            <input type="text" id="input-qty" placeholder="0,00" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço de Compra</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Preço de Compra</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="text" id="input-buy-price" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-buy-price" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Corretora</label>
-                        <input type="text" id="input-broker" placeholder="Ex: XP, Binance" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Corretora</label>
+                        <input type="text" id="input-broker" placeholder="Ex: XP, Binance" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Outros Custos</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Outros Custos</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="text" id="input-other-costs" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 text-slate-600 outline-none focus:border-primary transition-colors">
+                            <input type="text" id="input-other-costs" placeholder="0,00" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 text-slate-600 dark:text-slate-300 outline-none focus:border-primary transition-colors">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Moeda</label>
-                        <select id="input-currency" onchange="updateCurrencySymbol()" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Moeda</label>
+                        <select id="input-currency" onchange="updateCurrencySymbol()" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                             <option value="BRL">Real (BRL)</option>
                             <option value="USD">Dólar (USD)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Data</label>
-                        <input type="date" id="application-date" class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-primary transition-colors">
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Data</label>
+                        <input type="date" id="application-date" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Investido (Final)</label>
                         <div class="relative">
                             <span class="dynamic-currency-symbol absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
-                            <input type="text" id="input-total-calc" readonly class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 bg-slate-50 font-bold text-lg text-slate-500 outline-none">
+                            <input type="text" id="input-total-calc" readonly class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-100 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 font-bold text-lg text-slate-500 dark:text-slate-400 outline-none">
                         </div>
                     </div>`;
 
@@ -5525,7 +5525,7 @@
                 // Adicionado wrappers R$ fixos e placeholder para Reserva/Fixa
                 modalFields.innerHTML = `
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tipo</label>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Tipo</label>
                         <select id="input-type" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 outline-none focus:border-primary transition-colors">
                             <option>CDB</option>
                             <option>LCI</option>
