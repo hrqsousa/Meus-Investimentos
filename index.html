@@ -1377,6 +1377,415 @@
         </div>
     </div>
 
+    <!-- ASSET DETAILS MODAL (FULL SCREEN / LARGE) -->
+    <div id="asset-details-modal"
+        class="fixed inset-0 z-[55] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeAssetDetails()"></div>
+        <div id="asset-details-content"
+            class="relative bg-white dark:bg-slate-800 w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col overflow-hidden">
+
+            <!-- Header -->
+            <div
+                class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+                <div class="flex items-center gap-4">
+                    <div id="ad-icon-container"
+                        class="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-2xl text-primary">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h2 id="ad-ticker" class="text-2xl font-bold text-slate-800 dark:text-slate-100">TICKER</h2>
+                        <p id="ad-name" class="text-sm font-medium text-slate-500 dark:text-slate-400">Nome do Ativo</p>
+                    </div>
+                </div>
+                <button onclick="closeAssetDetails()"
+                    class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-8 space-y-8 bg-white dark:bg-slate-800 custom-scrollbar">
+
+                <!-- Main Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Quantidade</p>
+                        <p id="ad-qty" class="text-xl font-bold text-slate-700 dark:text-slate-200">-</p>
+                    </div>
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Preço Médio</p>
+                        <p id="ad-pm" class="text-xl font-bold text-slate-700 dark:text-slate-200">-</p>
+                    </div>
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Preço Atual</p>
+                        <p id="ad-price" class="text-xl font-bold text-slate-700 dark:text-slate-200">-</p>
+                    </div>
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Investido
+                        </p>
+                        <p id="ad-invested" class="text-xl font-bold text-slate-700 dark:text-slate-200">-</p>
+                    </div>
+                </div>
+
+                <!-- Profitability Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Valuation -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-trend-up text-blue-500"></i> Rentabilidade
+                        </h3>
+                        <div
+                            class="p-6 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 space-y-4">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="text-xs font-bold text-blue-400 uppercase mb-1">Saldo Atual</p>
+                                    <p id="ad-current-total"
+                                        class="text-3xl font-bold text-blue-600 dark:text-blue-400">-</p>
+                                </div>
+                                <div class="text-right">
+                                    <p id="ad-profit-perc"
+                                        class="text-sm font-bold bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-blue-600 dark:text-blue-300">
+                                        -</p>
+                                    <p id="ad-profit-val" class="text-sm font-semibold text-blue-500/80 mt-1">-</p>
+                                </div>
+                            </div>
+                            <div
+                                class="pt-4 border-t border-blue-100 dark:border-blue-800/30 flex justify-between items-center text-sm">
+                                <span class="text-slate-500 dark:text-slate-400">Retorno Total (com proventos)</span>
+                                <span id="ad-profit-total" class="font-bold text-slate-700 dark:text-slate-200">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proventos -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-coins text-yellow-500"></i> Proventos
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Recebido</p>
+                                <p id="ad-prov-all" class="text-lg font-bold text-slate-700 dark:text-slate-200">-</p>
+                            </div>
+                            <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Últimos 12m</p>
+                                <p id="ad-prov-12m" class="text-lg font-bold text-slate-700 dark:text-slate-200">-</p>
+                            </div>
+                            <div
+                                class="col-span-2 p-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-800/30 flex justify-between items-center">
+                                <span class="text-xs font-bold text-yellow-700 dark:text-yellow-500 uppercase">Dividend
+                                    Yield (12m)</span>
+                                <span id="ad-dy-12m"
+                                    class="text-xl font-bold text-yellow-600 dark:text-yellow-400">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100">Histórico de Movimentações</h3>
+                        <div class="flex gap-2">
+                            <button onclick="window.openTickerLiquidation()"
+                                class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-bold transition-colors">
+                                <i class="fa-solid fa-gavel mr-1"></i> Liquidar
+                            </button>
+                            <button onclick="window.openTickerAporte()"
+                                class="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-bold transition-colors">
+                                <i class="fa-solid fa-plus mr-1"></i> Aporte
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                                <tr>
+                                    <th class="px-5 py-3">Data / Tipo</th>
+                                    <th class="px-5 py-3 text-right">Qtd</th>
+                                    <th class="px-5 py-3 text-right">Preço</th>
+                                    <th class="px-5 py-3 text-right">Total</th>
+                                    <th class="px-5 py-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ad-history-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination -->
+                        <div
+                            class="bg-slate-50 dark:bg-slate-900/50 px-5 py-3 flex justify-between items-center border-t border-slate-100 dark:border-slate-700">
+                            <button id="btn-ad-prev" onclick="window.changeAdPage(-1)"
+                                class="text-slate-400 hover:text-slate-600 disabled:opacity-30"><i
+                                    class="fa-solid fa-chevron-left"></i></button>
+                            <span id="ad-page-display" class="text-xs font-bold text-slate-500">1/1</span>
+                            <button id="btn-ad-next" onclick="window.changeAdPage(1)"
+                                class="text-slate-400 hover:text-slate-600 disabled:opacity-30"><i
+                                    class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer with SAVE button -->
+            <div
+                class="p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
+                <button onclick="window.refreshUI(); closeAssetDetails()"
+                    class="px-6 py-3 text-slate-500 hover:bg-slate-200 rounded-xl font-bold transition-colors">Fechar</button>
+                <button
+                    onclick="window.saveToLocalStorage(); window.refreshUI(); closeAssetDetails(); showSuccessMessage('Salvo!');"
+                    class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="refreshUI_helper.js"></script>
+    <script src="temp_asset_details.js"></script>
+
+    <!-- TICKER LIQUIDATION MODAL -->
+    <div id="ticker-liquidation-modal"
+        class="fixed inset-0 z-[60] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeTickerLiquidation()"></div>
+        <div id="ticker-liquidation-content"
+            class="relative bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-xl transform scale-95 transition-transform duration-300 p-6">
+            <h3 class="font-bold text-xl text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-gavel text-slate-400"></i> Liquidar Ativo
+            </h3>
+
+            <div class="space-y-4">
+                <!-- Date -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Data da
+                        Liquidação</label>
+                    <input type="date" id="tl-date"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 outline-none focus:border-primary">
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quantidade
+                        (<span id="tl-max-qty">0</span>)</label>
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1">
+                            <input type="text" inputmode="decimal" id="tl-qty" placeholder="0,00"
+                                oninput="this.value = this.value.replace(/[^0-9,]/g, ''); updateLiquidationCalc()"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 outline-none focus:border-primary font-bold">
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="tl-check-all" onchange="toggleLiquidarTudo()"
+                                class="w-5 h-5 text-primary rounded focus:ring-primary border-slate-300">
+                            <label for="tl-check-all"
+                                class="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">Liquidar
+                                Tudo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Price -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Preço
+                            Venda</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
+                            <input type="text" inputmode="numeric" id="tl-price"
+                                oninput="formatCurrencyInput(this); updateLiquidationCalc()"
+                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 outline-none focus:border-primary font-bold">
+                        </div>
+                    </div>
+
+                    <!-- Costs -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Custos /
+                            Taxas</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3.5 text-slate-400 font-bold">R$</span>
+                            <input type="text" inputmode="numeric" id="tl-costs" value="0,00"
+                                oninput="formatCurrencyInput(this); updateLiquidationCalc()"
+                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 outline-none focus:border-primary">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Readonly -->
+                <div
+                    class="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Valor Total (Líquido)</span>
+                        <span id="tl-total-val" class="font-bold text-xl text-emerald-600">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeTickerLiquidation()"
+                    class="flex-1 py-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl font-bold transition-colors">Cancelar</button>
+                <button onclick="confirmTickerLiquidation()"
+                    class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 transition-colors">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSET DETAILS MODAL -->
+    <div id="asset-details-modal"
+        class="fixed inset-0 z-50 flex items-end md:items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeAssetDetails()"></div>
+        <div id="asset-details-content"
+            class="relative bg-white dark:bg-slate-900 w-full md:w-[800px] h-[90vh] md:h-auto md:max-h-[90vh] md:rounded-3xl shadow-2xl overflow-hidden flex flex-col transform scale-95 transition-transform duration-300">
+
+            <!-- Header -->
+            <div
+                class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/50 dark:bg-slate-800/50">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h2 id="ad-ticker" class="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                            AAPL</h2>
+                        <span id="ad-name"
+                            class="px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-800">Ação
+                            USD</span>
+                    </div>
+                </div>
+                <button onclick="closeAssetDetails()"
+                    class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-slate-500 dark:text-slate-400"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar space-y-8">
+
+                <!-- Summary Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Quantidade</p>
+                        <p id="ad-qty" class="font-bold text-slate-800 dark:text-slate-100">10,0000</p>
+                    </div>
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Preço Médio</p>
+                        <p id="ad-pm" class="font-bold text-slate-800 dark:text-slate-100">R$ 0,00</p>
+                    </div>
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Preço Atual</p>
+                        <p id="ad-price" class="font-bold text-slate-800 dark:text-slate-100">R$ 0,00</p>
+                    </div>
+                    <div
+                        class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Total Investido</p>
+                        <p id="ad-invested" class="font-bold text-slate-800 dark:text-slate-100">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <!-- Performance Card -->
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2"><i
+                            class="fa-solid fa-chart-line text-primary"></i> Desempenho</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Valor Atual</p>
+                            <h3 id="ad-current-total" class="text-2xl font-bold text-slate-800 dark:text-slate-100">R$
+                                0,00</h3>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Lucro de Capital
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <h3 id="ad-profit-val" class="text-2xl font-bold text-slate-800 dark:text-slate-100">R$
+                                    0,00</h3>
+                                <span id="ad-profit-perc"
+                                    class="text-xs font-bold px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-500">0%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Resultado Total
+                                (+Prov)</p>
+                            <h3 id="ad-profit-total" class="text-2xl font-bold text-slate-800 dark:text-slate-100">R$
+                                0,00</h3>
+                            <p class="text-[10px] text-slate-400 mt-1">Soma de valorização + proventos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proventos Stats -->
+                <div
+                    class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                    <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-2"><i
+                            class="fa-solid fa-coins text-amber-500"></i> Proventos</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center divide-x divide-slate-100 dark:divide-slate-700">
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Total Recebido</p>
+                            <p id="ad-prov-all" class="font-bold text-slate-700 dark:text-slate-200">R$ 0,00</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Últimos 12m</p>
+                            <p id="ad-prov-12m" class="font-bold text-slate-700 dark:text-slate-200">R$ 0,00</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Yield 12m</p>
+                            <p id="ad-dy-12m" class="font-bold text-emerald-600">0,00%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100">Histórico de Operações</h3>
+                        <div class="flex gap-2">
+                            <button onclick="window.changeAdPage(-1)" id="btn-ad-prev"
+                                class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-colors"><i
+                                    class="fa-solid fa-chevron-left text-xs"></i></button>
+                            <span id="ad-page-display"
+                                class="text-xs font-bold text-slate-500 flex items-center">1/1</span>
+                            <button onclick="window.changeAdPage(1)" id="btn-ad-next"
+                                class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-colors"><i
+                                    class="fa-solid fa-chevron-right text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs uppercase border-b border-slate-200 dark:border-slate-700">
+                                <tr>
+                                    <th class="px-5 py-3">Data</th>
+                                    <th class="px-5 py-3 text-right">Qtd</th>
+                                    <th class="px-5 py-3 text-right">Preço</th>
+                                    <th class="px-5 py-3 text-right">Total</th>
+                                    <th class="px-5 py-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ad-history-body"
+                                class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <div
+                class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
+                <button onclick="openTickerLiquidation()"
+                    class="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 font-bold transition-colors">Liquidar</button>
+                <button onclick="openTickerAporte()"
+                    class="bg-primary hover:bg-primary-dark text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"><i
+                        class="fa-solid fa-plus"></i> Novo Aporte</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
@@ -1417,7 +1826,7 @@
         window.mockTesouroAssets = [];
         window.mockRendaVariavelAssets = [];
         window.proventos = [];
-        window.liquidationHistory = [];
+        window.liquidationHistory = window.liquidationHistory || [];
 
         // --- Local Data Manager (Test Mode) ---
         window.LocalDataManager = {
@@ -1584,10 +1993,10 @@
                 unsubscribeListeners.forEach(unsub => unsub());
                 unsubscribeListeners = [];
 
-                // Clear UI Data for Security
-                window.mockReservaAssets = []; window.mockRendaFixaAssets = [];
-                window.mockTesouroAssets = []; window.mockRendaVariavelAssets = [];
-                window.liquidationHistory = []; window.proventos = [];
+                // Clear UI Data for Security - DISABLED FOR LOCAL MODE PERSISTENCE
+                // window.mockReservaAssets = []; window.mockRendaFixaAssets = [];
+                // window.mockTesouroAssets = []; window.mockRendaVariavelAssets = [];
+                // window.liquidationHistory = []; window.proventos = [];
                 if (window.renderDashboard) window.renderDashboard();
             }
         });
@@ -1926,7 +2335,11 @@
             // Disparar evento de input manualmente se necessário para frameworks, mas aqui usamos oninput direto
         };
 
-        const formatCurrency = (val, currency = 'BRL') => { if (currency === 'USD') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val); return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val); };
+        const formatCurrency = (val, currency = 'BRL') => {
+            if (val === undefined || val === null || isNaN(val)) val = 0;
+            if (currency === 'USD') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        };
         const formatDate = (dateString) => { if (!dateString) return '-'; const parts = dateString.split('-'); const date = new Date(parts[0], parts[1] - 1, parts[2]); return new Intl.DateTimeFormat('pt-BR').format(date); };
         const calculateDays = (maturityDate) => { const today = new Date(); today.setHours(0, 0, 0, 0); const parts = maturityDate.split('-'); const maturity = new Date(parts[0], parts[1] - 1, parts[2]); return Math.ceil((maturity - today) / (1000 * 60 * 60 * 24)); };
 
@@ -2587,12 +3000,21 @@
 
             document.querySelectorAll('.rv-filter-btn').forEach(btn => {
                 const isSelected = btn.getAttribute('onclick').includes(`'${filter}'`);
+
+                // Limpa todas as classes de estado primeiro
+                btn.className = "rv-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-transparent";
+
                 if (isSelected) {
-                    btn.classList.remove('bg-slate-100', 'text-slate-600');
-                    btn.classList.add('bg-primary', 'text-white');
+                    // Estado Ativo: Azul (ou Primary)
+                    btn.classList.add('bg-primary', 'text-white', 'font-bold', 'shadow-md');
+                    // Remove explicitamente classes Dark Mode que causam conflito
+                    btn.classList.remove('dark:bg-slate-700', 'dark:text-slate-300', 'hover:bg-slate-200', 'dark:hover:bg-slate-600', 'bg-slate-100', 'text-slate-600');
                 } else {
-                    btn.classList.remove('bg-primary', 'text-white');
-                    btn.classList.add('bg-slate-100', 'text-slate-600');
+                    // Estado Inativo: Cinza
+                    btn.classList.add('bg-slate-100', 'text-slate-600', 'hover:bg-slate-200');
+                    // Adiciona classes Dark Mode
+                    btn.classList.add('dark:bg-slate-700', 'dark:text-slate-300', 'dark:hover:bg-slate-600');
+                    btn.classList.remove('bg-primary', 'text-white', 'font-bold', 'shadow-md');
                 }
             });
 
@@ -2655,6 +3077,9 @@
             const totalPortfolioWithCaixa = globalTotal + caixaVal;
 
             const sortedTickers = Object.values(grouped).filter(a => {
+                // FILTER OUT SOLD ASSETS (Zero Quantity)
+                if (a.quantity <= 0.000001) return false;
+
                 if (filter === 'all') return true;
                 const type = a.type.toUpperCase();
                 const f = filter.toUpperCase();
@@ -2783,7 +3208,7 @@
                                 <i class="fa-solid fa-chart-line"></i>
                             </div>
                             <div class="flex flex-col">
-                                <div class="flex items-center cursor-pointer hover:text-primary transition-colors" onclick="event.stopPropagation(); openRVDetail('${group.ticker}')">
+                                <div class="flex items-center cursor-pointer hover:text-primary transition-colors" onclick="event.stopPropagation(); openAssetDetails('${group.ticker}')">
                                     <span class="font-bold text-slate-800 dark:text-slate-100 text-base">${group.ticker}</span>
                                     ${currencyBadge}
                                 </div>
@@ -7194,37 +7619,12 @@
         if (window.renderDashboard && window.currentContext === 'dashboard') window.renderDashboard();
     };
 
+    /* 
     window.refreshUI = () => {
-        console.log(">>> refreshUI Triggered. Context:", window.currentContext, "Ticker:", window.currentRVTicker);
-
-        // 1. Refresh Background Views
-        if (window.currentContext === 'renda-variavel') {
-            if (window.renderRendaVariavel) window.renderRendaVariavel();
-        }
-        else if (window.currentContext === 'tesouro') { if (window.renderTesouro) window.renderTesouro(); }
-        else if (window.currentContext === 'renda-fixa') { if (window.renderRendaFixa) window.renderRendaFixa(); }
-        else if (window.currentContext === 'reserva') { if (window.renderReserva) renderReserva(); }
-        else if (window.renderDashboard) window.renderDashboard();
-
-        // 2. Refresh RV Detail Modal if Open
-        const detailModal = document.getElementById('rv-detail-modal');
-        const isHidden = detailModal ? detailModal.classList.contains('hidden') : true;
-        console.log(">>> RV Detail Modal Status:", { exists: !!detailModal, hidden: isHidden, ticker: window.currentRVTicker });
-
-        if (detailModal && !isHidden && window.currentRVTicker) {
-            console.log(">>> Re-opening RV Detail for:", window.currentRVTicker);
-            // Re-open detail to refresh data
-            const contributions = window.mockRendaVariavelAssets.filter(a => a.ticker === window.currentRVTicker);
-            const history = (window.liquidationHistory || []).filter(h => h.ticker === window.currentRVTicker);
-
-            if (contributions.length === 0 && history.length === 0) {
-                console.log(">>> Asset fully deleted. Closing detail.");
-                if (window.closeRVDetailModal) window.closeRVDetailModal();
-            } else {
-                if (window.openRVDetail) window.openRVDetail(window.currentRVTicker);
-            }
-        }
-    };
+        // OVERRIDDEN BY refreshUI_helper.js
+        console.log("Using internal refreshUI (Legacy) - Disabled");
+    }; 
+    */
 
     // --- CSV Import Logic ---
     window.csvImportData = [];
