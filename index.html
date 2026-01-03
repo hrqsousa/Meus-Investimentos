@@ -4648,7 +4648,13 @@
                 if (editContext === 'renda-variavel') {
                     if (document.getElementById('input-type')) document.getElementById('input-type').value = asset.type || 'Ação';
                     if (document.getElementById('input-ticker')) document.getElementById('input-ticker').value = asset.ticker || '';
-                    if (document.getElementById('input-qty')) document.getElementById('input-qty').value = (asset.quantity || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    if (document.getElementById('input-qty')) {
+                        let decimals = 2;
+                        // Determine decimals based on Type/Category just like we do for the input mask
+                        let typeVal = asset.type || 'Ação';
+                        if (typeVal === 'Cripto' || ['Stock', 'ETF', 'REIT', 'Exterior'].includes(typeVal) || asset.currency === 'USD') decimals = 7;
+                        document.getElementById('input-qty').value = (asset.quantity || 0).toLocaleString('pt-BR', { minimumFractionDigits: decimals });
+                    }
                     if (document.getElementById('input-buy-price')) document.getElementById('input-buy-price').value = (asset.currentPrice || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     if (document.getElementById('input-other-costs')) document.getElementById('input-other-costs').value = (asset.costs || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     if (document.getElementById('input-currency')) {
@@ -5744,10 +5750,14 @@
         };
 
         // Helper for Masking with Callback support avoiding race conditions
-        function attachCurrencyMask(selector, callback) {
+        function attachCurrencyMask(selector, callback, precisionOrFn = 2) {
             const inputs = document.querySelectorAll(selector);
             inputs.forEach(input => {
                 input.addEventListener('input', (e) => {
+                    let precision = 2;
+                    if (typeof precisionOrFn === 'function') precision = precisionOrFn();
+                    else precision = precisionOrFn;
+
                     let value = e.target.value.replace(/\D/g, "");
                     if (value === "") {
                         e.target.value = "";
@@ -5756,8 +5766,9 @@
                         return;
                     }
 
-                    let num = parseFloat(value) / 100;
-                    e.target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    let divisor = Math.pow(10, precision);
+                    let num = parseFloat(value) / divisor;
+                    e.target.value = num.toLocaleString('pt-BR', { minimumFractionDigits: precision, maximumFractionDigits: precision });
 
                     // Call the calculation logic AFTER the value is safely masked
                     if (callback) callback();
@@ -5876,7 +5887,11 @@
 
                 // Attach RV Masks
                 setTimeout(() => {
-                    attachCurrencyMask('#input-qty', calculateRVTotal);
+                    attachCurrencyMask('#input-qty', calculateRVTotal, () => {
+                        const typeVal = document.getElementById('input-type')?.value;
+                        if (typeVal === 'Cripto' || typeVal === 'Exterior') return 7;
+                        return 2;
+                    });
                     attachCurrencyMask('#input-buy-price', calculateRVTotal);
                     attachCurrencyMask('#input-other-costs', calculateRVTotal);
                     attachCurrencyMask('#input-rate-val'); // if exists? Context is RV, maybe not needed
