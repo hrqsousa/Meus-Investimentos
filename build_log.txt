@@ -1,0 +1,22 @@
+
+> investimentos2-app@0.0.0 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 3 modules transformed.
+[31m✗[39m Build failed in 64ms
+[31merror during build:
+[31m[vite-plugin-pwa:build] [plugin vite-plugin-pwa:build] src/main.js: There was an error during the build:
+  Could not resolve "./store.js" from "src/main.js"
+Additionally, handling the error in the 'buildEnd' hook caused the following error:
+  Could not resolve "./store.js" from "src/main.js"[31m
+file: [36mC:/Users/henri/Downloads/investimentos2-app/src/main.js[31m
+    at getRollupError (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/rollup/dist/es/shared/node-entry.js:23467:39
+    at async catchUnfinishedHookActions (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/rollup/dist/es/shared/node-entry.js:22925:16)
+    at async rollupInternal (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/rollup/dist/es/shared/node-entry.js:23450:5)
+    at async buildEnvironment (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/vite/dist/node/chunks/config.js:33541:12)
+    at async Object.build (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/vite/dist/node/chunks/config.js:33900:19)
+    at async Object.buildApp (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/vite/dist/node/chunks/config.js:33897:153)
+    at async CAC.<anonymous> (file:///C:/Users/henri/Downloads/investimentos2-app/node_modules/vite/dist/node/cli.js:629:3)[39m
