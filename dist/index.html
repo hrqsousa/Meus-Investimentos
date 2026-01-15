@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meus Investimentos</title>
+  <script type="module" crossorigin src="/assets/index-BRG-8xHr.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CG4DMoYs.css">
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+
+<body>
+  <div id="app">
+    <!-- Sidebar (Desktop) -->
+    <aside class="sidebar">
+      <div class="logo-area">
+        <img src="/pwa-192x192.png" alt="Logo" class="logo-icon" style="background: transparent;">
+        <div class="brand-text">
+          <span class="brand-prefix">Meus</span>
+          <span class="brand-main">Investimentos</span>
+        </div>
+      </div>
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-page="home">
+          <span class="nav-icon" data-icon="home"></span>
+          <span>Início</span>
+        </a>
+        <a href="#" class="nav-item" data-page="rebalance">
+          <span class="nav-icon" data-icon="scale"></span>
+          <span>Rebalanceamento</span>
+        </a>
+        <a href="#" class="nav-item" data-page="reserve">
+          <span class="nav-icon" data-icon="shield"></span>
+          <span>Reserva</span>
+        </a>
+        <a href="#" class="nav-item" data-page="fixed">
+          <span class="nav-icon" data-icon="clipboard"></span>
+          <span>Renda Fixa</span>
+        </a>
+        <a href="#" class="nav-item" data-page="variable">
+          <span class="nav-icon" data-icon="trendUp"></span>
+          <span>Renda Variável</span>
+        </a>
+        <a href="#" class="nav-item" data-page="treasury">
+          <span class="nav-icon" data-icon="building"></span>
+          <span>Tesouro Direto</span>
+        </a>
+        <a href="#" class="nav-item" data-page="settings" style="margin-top: auto;">
+          <span class="nav-icon" data-icon="cog"></span>
+          <span>Configurações</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="content-wrapper">
+        <!-- Header / Top Bar (Mobile mostly, or Page Title) -->
+        <header class="flex justify-between items-center" style="margin-bottom: 2rem;">
+          <h1 id="page-title" style="font-size: var(--font-size-2xl); font-weight: 700;">Visão Geral</h1>
+          <!-- Settings Icon or similar -->
+        </header>
+
+        <!-- Dynamic Content Container -->
+        <div id="content-area">
+          <div id="dashboard-container" class="dashboard-grid">
+            <!-- Cards will be injected here -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FAB -->
+    <button class="fab">
+      <span class="fab-icon" data-icon="plus" style="display: flex;"></span>
+      <span>Novo Aporte</span>
+    </button>
+
+    <!-- Bottom Nav (Mobile) -->
+    <nav class="bottom-nav">
+      <a href="#" class="bottom-nav-item active" data-page="home">
+        <span class="nav-icon" data-icon="home"></span>
+        <span>Início</span>
+      </a>
+      <a href="#" class="bottom-nav-item" data-page="rebalance">
+        <span class="nav-icon" data-icon="scale"></span>
+        <span>Rebal.</span>
+      </a>
+      <a href="#" class="bottom-nav-item" data-page="reserve">
+        <span class="nav-icon" data-icon="shield"></span>
+        <span>Reserva</span>
+      </a>
+      <a href="#" class="bottom-nav-item" data-page="variable">
+        <span class="nav-icon" data-icon="trendUp"></span>
+        <span>R. Var.</span>
+      </a>
+      <a href="#" class="bottom-nav-item" data-page="settings">
+        <span class="nav-icon" data-icon="cog"></span>
+        <span>Ajustes</span>
+      </a>
+    </nav>
+  </div>
+</body>
+
+</html>
