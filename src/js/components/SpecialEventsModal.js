@@ -222,6 +222,39 @@ export function openSpecialEventsModal() {
             return;
         }
 
+        // Construct Payload
+        let payload = {};
+        const dateDate = document.getElementById('event-date').value;
+        payload.date = dateDate;
+
+        if (selectedType === 'bonus' || selectedType === 'staking') {
+            payload.quantity = parseFloat(document.getElementById('event-qty').value) || 0;
+            payload.cost = parseFloat(document.getElementById('event-cost').value) || 0;
+            if (payload.quantity <= 0) {
+                alert("Informe uma quantidade válida.");
+                return;
+            }
+        } else if (selectedType === 'split' || selectedType === 'inplit') {
+            payload.ratio = parseFloat(document.getElementById('event-ratio').value) || 0;
+            if (payload.ratio <= 0) {
+                alert("Informe uma proporção válida.");
+                return;
+            }
+        } else if (selectedType === 'ticker_change') {
+            payload.newTicker = (document.getElementById('event-new-ticker').value || '').trim().toUpperCase();
+            if (!payload.newTicker) {
+                alert("Informe o novo ticker.");
+                return;
+            }
+        } else if (selectedType === 'subscription') {
+            payload.quantity = parseFloat(document.getElementById('event-qty').value) || 0;
+            payload.price = parseFloat(document.getElementById('event-price').value) || 0;
+            if (payload.quantity <= 0) {
+                alert("Informe uma quantidade válida.");
+                return;
+            }
+        }
+
         if (selectedType === 'split' || selectedType === 'inplit') {
             // We need to access the sortedAssets/original asset to check currency/type
             // But we only have selectedAssetId.
@@ -302,7 +335,9 @@ function showSuccessModal(type) {
         'split': 'Desdobramento Realizado!',
         'inplit': 'Grupamento Realizado!',
         'subscription': 'Subscrição Realizada!',
-        'ticker_change': 'Troca de Ticker Realizada!'
+        'subscription': 'Subscrição Realizada!',
+        'ticker_change': 'Troca de Ticker Realizada!',
+        'staking': 'Staking Registrado!'
     };
 
     const successContent = `

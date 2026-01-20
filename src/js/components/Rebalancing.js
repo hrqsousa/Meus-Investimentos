@@ -272,36 +272,36 @@ function renderCategories(cats, totalEquity, targets) {
 
         return `
             <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 0.5rem;" data-cat-id="${cat.id}">
-                <div class="card-header toggle-header" style="padding: 1rem 1.5rem; background: var(--bg-card); cursor: pointer; user-select: none; display: flex; align-items: center;">
+            <div class="rebal-card-header toggle-header" data-cat-id="${cat.id}">
                     
-                    <!-- Col 1: Title & Info (Flex 3 matches Subrow Name(2) + Value(1)) -->
-                    <div style="flex: 3; display: flex; align-items: center;">
-                         <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <div style="color: ${cat.color}; background: ${cat.color}20; padding: 6px; border-radius: 6px;">${cat.icon}</div>
-                            <div>
-                                <span class="card-title" style="font-size: 1.1rem; display: block;">${cat.label}</span>
-                                <span style="font-size: 0.85rem; color: var(--text-secondary);">Atual: <strong>${currentPct.toFixed(1)}%</strong></span>
-                            </div>
+                    <!-- Info Section: Icon & Title -->
+                    <div class="rebal-info">
+                        <div style="color: ${cat.color}; background: ${cat.color}20; padding: 6px; border-radius: 6px; display: flex;">${cat.icon}</div>
+                        <div style="min-width: 0;">
+                            <span class="card-title" style="font-size: 1.1rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${cat.label}</span>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">Atual: <strong>${currentPct.toFixed(1)}%</strong></span>
                         </div>
                     </div>
                     
-                    <!-- Col 2: Meta (Flex 1) -->
-                    <div style="flex: 1; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
-                         <div style="text-transform: uppercase; font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 2px;">Meta</div>
-                         <div style="display: flex; align-items: center; gap: 4px;">
-                             <input type="number" class="target-input main-target" data-id="${cat.id}" value="${targetPct}" placeholder="0" min="0" max="100" style="font-size: 1.2rem; width: 60px; text-align: right; border: none; border-bottom: 2px solid var(--border-color); background: transparent; font-weight: 700;">
-                             <span style="font-weight: 700; font-size: 1rem;">%</span>
-                         </div>
+                    <!-- Stats Section (Meta + Status) -->
+                    <div class="rebal-stats">
+                        <!-- Meta Input -->
+                        <div class="rebal-meta">
+                            <div class="input-label-mobile" style="text-transform: uppercase; font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 2px;">Meta</div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <input type="number" class="target-input main-target" data-id="${cat.id}" value="${targetPct}" placeholder="0" min="0" max="100" style="font-size: 1.2rem; width: 60px; text-align: right; border: none; border-bottom: 2px solid var(--border-color); background: transparent; font-weight: 700; color: var(--text-primary);">
+                                <span style="font-weight: 700; font-size: 1rem;">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Status/Suggestion -->
+                        <div class="rebal-status">
+                            <div style="font-size: 1rem;">${statusHtml}</div>
+                        </div>
                     </div>
 
-                    <!-- Col 3: Aporte (Flex 1) -->
-                    <div style="flex: 1; text-align: right;">
-                         <!-- Label removed -->
-                         <div style="font-size: 1rem;">${statusHtml}</div>
-                    </div>
-
-                    <!-- Chevron (Fixed) -->
-                    <div style="width: 50px; text-align: right; color: var(--text-secondary);">
+                    <!-- Chevron -->
+                    <div style="color: var(--text-secondary); display: flex;">
                         ${chevron}
                     </div>
                 </div>
