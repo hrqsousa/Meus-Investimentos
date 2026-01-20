@@ -134,7 +134,7 @@ export function renderVariableIncome(containerId) {
                     </div>
 
                     <!-- Right Actions -->
-                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                     <div style="margin-left: auto; display: flex; gap: 0.5rem; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; max-width: 100%;">
                          <button class="btn" id="btn-proventos" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color); border: 1px solid var(--success-color); padding: 0.5rem 1rem; font-size: 0.85rem;" title="Proventos">
                             ${icons.dollarSign || '$'} <span class="desktop-only">Proventos</span>
                          </button>
@@ -188,7 +188,12 @@ export function renderVariableIncome(containerId) {
 
         const filteredProventos = allProventos.filter(p => {
             // 1. Filter by Date (12m for Avg)
+            if (!p.date) return false;
+            // Handle various formats if necessary, but assume YYYY-MM-DD for now.
+            // Safety check for date validity
             const d = new Date(p.date + 'T00:00:00');
+            if (isNaN(d.getTime())) return false;
+
             if (d < yearAgo || d > now) return false;
 
             // 2. Filter by Category
@@ -219,7 +224,19 @@ export function renderVariableIncome(containerId) {
         const profit = totalBalance - totalInvested;
         const profitPerc = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
 
-        const totalProventos12m = filteredProventos.reduce((sum, p) => sum + (parseFloat(p.value) || 0), 0);
+        // Helper for robust parsing
+        const parseMoney = (val) => {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            // Remove 'R$', ' ', etc. Convert ',' to '.' if needed
+            let clean = val.toString().replace(/[^\d,.-]/g, '');
+            // If comma exists and dot doesn't, or comma is after dot, treat as decimal separator
+            // Heuristic: if string has comma, replace with dot
+            if (clean.includes(',')) clean = clean.replace(',', '.');
+            return parseFloat(clean) || 0;
+        };
+
+        const totalProventos12m = filteredProventos.reduce((sum, p) => sum + parseMoney(p.value), 0);
         const avgProventos12m = totalProventos12m / 12;
 
         // Update DOM
@@ -547,8 +564,8 @@ function renderAssetTable(assets, filter) {
         if (diff > 1) { // Threshold
             recHtml = `
                                 <div style="display: flex; flex-direction: column;">
-                                    <span style="color: var(--primary-color); font-weight: 600; background: rgba(0, 74, 173, 0.1); padding: 4px 8px; border-radius: 4px; text-align: center; margin-bottom: 2px;">Comprar</span>
-                                    <span style="font-size: 0.75rem; color: var(--primary-color);">R$ ${diff.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                    <span class="rec-badge-buy">Comprar</span>
+                                    <span class="rec-value">R$ ${diff.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                                 </div>
                              `;
         }
@@ -607,7 +624,7 @@ function renderAssetTable(assets, filter) {
                                 ${recHtml}
                             </td>
                             <td style="padding: 1rem;">
-                                <button class="btn btn-sm btn-quick-add" data-id="${asset.id}" data-ticker="${asset.ticker}" data-type="${asset.type}" style="border: 1px solid var(--primary-color); color: var(--primary-color); background: rgba(0, 74, 173, 0.05); font-weight: 600;">
+                                <button class="btn btn-sm btn-quick-add btn-action-soft" data-id="${asset.id}" data-ticker="${asset.ticker}" data-type="${asset.type}">
                                     + Aportar
                                 </button>
                             </td>
