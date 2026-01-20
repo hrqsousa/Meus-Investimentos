@@ -432,3 +432,111 @@ input:checked+.slider:before {
     max-width: 800px;
     margin: 0 auto;
 }
+
+/* Rebalancing Module Styles */
+.rebal-card-header {
+    padding: 1rem 1.5rem;
+    background: var(--bg-card);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.rebal-info {
+    flex: 1;
+    /* Takes remaining space on left */
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    /* Text truncation fix */
+}
+
+.rebal-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Default Desktop: Side-by-side */
+.rebal-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.rebal-status {
+    text-align: right;
+    min-width: 80px;
+}
+
+/* Mobile Layout (< 600px) */
+@media (max-width: 600px) {
+    .rebal-stats {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+
+    .rebal-meta {
+        align-items: flex-end;
+        margin-bottom: 0;
+    }
+
+    .rebal-status {
+        text-align: right;
+        font-size: 0.85rem;
+    }
+
+    .input-label-mobile {
+        font-size: 0.7rem;
+    }
+}
+
+/* Variable Income Recommendations */
+.rec-badge-buy {
+    color: var(--primary-color);
+    background: rgba(0, 74, 173, 0.1);
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
+    margin-bottom: 2px;
+}
+
+.btn-action-soft {
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(0, 74, 173, 0.05);
+    font-weight: 600;
+}
+
+/* Dark Mode Overrides for these specific elements */
+.dark-mode .rec-badge-buy {
+    color: #e2e8f0 !important;
+    /* Soft White */
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-mode .btn-action-soft {
+    color: #e2e8f0 !important;
+    border-color: #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-mode .btn-action-soft:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.rec-value {
+    font-size: 0.75rem;
+    color: var(--primary-color);
+}
+
+.dark-mode .rec-value {
+    color: #94a3b8 !important;
+    /* Slate 400 - Readable Gray */
+}
