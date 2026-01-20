@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.0.1] - 2026-01-20
+
+### Melhorias de UI/UX
+- **Renda Variável - Dark Mode**:
+  - Novas cores neutras (Slate/Cinza) para badges e botões de ação no modo escuro, substituindo o azul de baixo contraste.
+  - Correção de legibilidade no valor monetário das recomendações de compra.
+- **Renda Variável - Mobile**:
+  - Botões de ação do topo (Proventos, Cotações, etc.) agora são roláveis horizontalmente, evitando cortes.
+- **Rebalanceamento - Mobile**:
+  - Layout responsivo aprimorado: informações de meta e status agora empilham verticalmente para evitar poluição visual em telas pequenas.
+
+### Correções de Bugs (Fixes)
+- **Sincronização de Caixa (Rebalanceamento)**:
+  - Corrigido problema onde o valor "Em Caixa" não era salvo no Firebase, causando inconsistência entre dispositivos. Agora sincroniza corretamente com o perfil do usuário.
+- **Gráfico de Alocação (Dashboard)**:
+  - Corrigido cálculo percentual da categoria "Renda Variável" e outras classes, que apresentavam valores incorretos devido a falha na lógica de agrupamento.
+- **Eventos Corporativos (Staking)**:
+  - Corrigido botão "Salvar" inoperante para eventos do tipo Staking.
+- **Média de Proventos (12m)**:
+  - Corrigido bug que exibia "R$ 0,00" na média mensal mesmo com proventos existentes (falha no parse de moeda).
+
 ## [2.0.0] - 2026-01-15
 
 **VERSÃO DE LANÇAMENTO OFICIAL! SAÍMOS DO BETA!**
