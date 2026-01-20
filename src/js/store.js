@@ -125,6 +125,15 @@ class Store {
                             this.updateGoal(parseFloat(localStorage.getItem('dashboardGoal')));
                         }
 
+                        // Load Cash from Cloud
+                        if (data.cash !== undefined) {
+                            this.state.cash = parseFloat(data.cash);
+                            localStorage.setItem('userCash', this.state.cash); // Keep local in sync
+                        } else if (localStorage.getItem('userCash')) {
+                            // Migration: Push local to cloud
+                            this.updateCash(parseFloat(localStorage.getItem('userCash')));
+                        }
+
                         this.notify();
                     }
                 });
@@ -150,47 +159,58 @@ class Store {
         const allAssets = [...fixedAssets, ...varAssets];
         const dollarQuote = this.state.dollarQuote || 1;
 
-        const totalInvested = allAssets.reduce((sum, a) => {
-            let val = parseFloat(a.investedValue) || 0;
-            if (a.currency === 'USD') val *= dollarQuote;
-            return sum + val;
-        }, 0);
-
-        const totalAssetsBalance = allAssets.reduce((sum, a) => {
-            let val = parseFloat(a.currentBalance) || 0;
-            if (a.currency === 'USD') val *= dollarQuote;
-            return sum + val;
-        }, 0);
-
-        const totalBalance = totalAssetsBalance + (this.state.cash || 0);
-
-        // Profit = Assets Balance - Assets Invested (Cash excluded)
-        const profit = totalAssetsBalance - totalInvested;
-        const profitPercentage = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
-
-        // Allocation Logic
+        // Initialize Totals
         let fixedTotal = 0;
         let treasuryTotal = 0;
         let reserveTotal = 0;
         let variableTotal = 0;
 
-        // Helper to check category
-        const isTreasury = (a) => a.type.toLowerCase().includes('tesouro');
+        let totalInvested = 0;
+        let totalAssetsBalance = 0;
 
-        allAssets.forEach(a => {
+        // Helper to check category
+        const isTreasury = (a) => a.type && a.type.toLowerCase().includes('tesouro');
+
+        // 1. Process Variable Income Exclusively
+        varAssets.forEach(a => {
             let val = parseFloat(a.currentBalance) || 0;
-            if (a.currency === 'USD') val *= dollarQuote;
+            let inv = parseFloat(a.investedValue) || 0;
+
+            if (a.currency === 'USD') {
+                val *= dollarQuote;
+                inv *= dollarQuote;
+            }
+
+            variableTotal += val;
+            totalAssetsBalance += val;
+            totalInvested += inv;
+        });
+
+        // 2. Process Fixed Income Exclusively
+        fixedAssets.forEach(a => {
+            let val = parseFloat(a.currentBalance) || 0;
+            let inv = parseFloat(a.investedValue) || 0;
+            // Fixed income usually BRL, but just in case
+            if (a.currency === 'USD') {
+                val *= dollarQuote;
+                inv *= dollarQuote;
+            }
 
             if (a.isReserve) {
                 reserveTotal += val;
-            } else if (a.category === 'variable') {
-                variableTotal += val;
             } else if (isTreasury(a)) {
                 treasuryTotal += val;
             } else {
                 fixedTotal += val;
             }
+
+            totalAssetsBalance += val;
+            totalInvested += inv;
         });
+
+        const totalBalance = totalAssetsBalance + (this.state.cash || 0);
+        const profit = totalAssetsBalance - totalInvested;
+        const profitPercentage = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
 
         // Update Dashboard State
         this.state.dashboard.totalBalance = totalBalance;
@@ -1293,11 +1313,19 @@ class Store {
             }
         }
     }
-    updateCash(value) {
+    async updateCash(value) {
         this.state.cash = parseFloat(value) || 0;
         localStorage.setItem('userCash', this.state.cash);
         this.updateDashboardFromAssets(); // Recalculate global totals
         this.notify();
+
+        if (this.state.user) {
+            try {
+                await updateUserDocument(this.state.user.uid, { cash: this.state.cash });
+            } catch (e) {
+                console.error("Error syncing cash value:", e);
+            }
+        }
     }
 
     async updateRebalancingTargets(targets) {
